@@ -1,4 +1,5 @@
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { t } from '../../i18n/index.js';
 import { useDisplayStore } from '../stores/display.js';
@@ -24,6 +25,34 @@ import StealthIntelPanel from './panels/StealthIntelPanel.vue';
 import MissionRecordingPanel from './panels/MissionRecordingPanel.vue';
 import AirgapGestureOverlay from './panels/AirgapGestureOverlay.vue';
 import LocalNeuralAgentPanel from './panels/LocalNeuralAgentPanel.vue';
+import StarshipCockpitOverlay from './panels/StarshipCockpitOverlay.vue';
+
+// Starship liftoff & Mechazilla catch emulation is active by default on the landing page!
+const starshipActive = ref(true);
+
+function toggleStarship() {
+  starshipActive.value = !starshipActive.value;
+}
+
+function openStarship() {
+  starshipActive.value = true;
+}
+
+onMounted(() => {
+  window.addEventListener('gev:toggle-starship-cockpit', toggleStarship);
+  window.addEventListener('gev:open-starship-cockpit', openStarship);
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hash.includes('starship') || window.location.search.includes('starship'))
+  ) {
+    starshipActive.value = true;
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('gev:toggle-starship-cockpit', toggleStarship);
+  window.removeEventListener('gev:open-starship-cockpit', openStarship);
+});
 
 // The ACTIVE STYLE corner shows the style VisualSettings publishes.
 const { style } = storeToRefs(useDisplayStore());
@@ -129,4 +158,5 @@ const vToastText = {
   <MissionRecordingPanel />
   <AirgapGestureOverlay />
   <LocalNeuralAgentPanel />
+  <StarshipCockpitOverlay v-if="starshipActive" @close="starshipActive = false" />
 </template>

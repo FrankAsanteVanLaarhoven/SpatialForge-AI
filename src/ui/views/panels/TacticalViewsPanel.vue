@@ -6,6 +6,7 @@ import { makeDraggable, resetDashboardLayout } from '../../dashboard/dashboardLa
 
 const display = useDisplayStore();
 const isOpen = ref(false);
+const isOpsMenuOpen = ref(false);
 const activeViewId = ref('austin-nadir');
 const toastMessage = ref('');
 const panelContainerRef = ref(null);
@@ -53,6 +54,20 @@ const TACTICAL_VIEWS = [
     pitch: -58,
     style: 'normal',
     desc: 'Launch pad & crawlerway for SpaceX Starship/Falcon orbital trajectory insertions.',
+    iconKey: 'rocket'
+  },
+  {
+    id: 'starbase-boca-chica',
+    title: 'Starbase Boca Chica & Mechazilla OLM',
+    location: 'Boca Chica, Texas',
+    tag: 'STARSHIP OLM & TOWER',
+    lat: 25.9972,
+    lon: -97.1565,
+    alt: 280,
+    heading: 90,
+    pitch: -25,
+    style: 'surveillance',
+    desc: 'Starship Orbital Launch Mount (OLM) and 146m Mechazilla launch and chopstick catch tower.',
     iconKey: 'rocket'
   },
   {
@@ -198,6 +213,15 @@ function toggleLocalNeuralAgent() {
   showToast('Sovereign Local Neural Agent toggled');
 }
 
+function toggleStarship() {
+  window.dispatchEvent(new CustomEvent('gev:toggle-starship-cockpit'));
+  showToast('SpaceX Starship & Starlink Emulation HUD toggled');
+}
+
+function toggleOpsMenu() {
+  isOpsMenuOpen.value = !isOpsMenuOpen.value;
+}
+
 function handleAirgapSwipe(e) {
   const targetId = e.detail?.targetId;
   if (targetId) {
@@ -265,6 +289,7 @@ onUnmounted(() => {
   <div id="tactical-views-root">
     <!-- Quick Access Top Bar Trigger -->
     <div class="tactical-views-trigger-bar">
+      <!-- 1. Tactical Views Launcher -->
       <button
         class="tactical-trigger-btn"
         :class="{ active: isOpen }"
@@ -285,6 +310,26 @@ onUnmounted(() => {
         <span class="trigger-text">TACTICAL VIEWS ({{ TACTICAL_VIEWS.length }})</span>
         <span class="trigger-chevron">{{ isOpen ? '▲' : '▼' }}</span>
       </button>
+
+      <!-- 2. Starship & Starlink -->
+      <button
+        class="tactical-trigger-btn starship-toggle-btn"
+        @click="toggleStarship"
+        title="Toggle SpaceX Starship Mechazilla Catch & Starlink Constellation Emulation"
+      >
+        <span class="pulse-indicator orange"></span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M8 1c2 2 3.5 6 3.5 10l-1.5 2H6L4.5 11C4.5 7 6 3 8 1z"/>
+            <path d="M4.5 11L2 13v2l4-1"/>
+            <path d="M11.5 11L14 13v2l-4-1"/>
+            <circle cx="8" cy="7" r="1.5" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="trigger-text">STARSHIP & STARLINK</span>
+      </button>
+
+      <!-- 3. Evidence Replay Console -->
       <button
         class="tactical-trigger-btn replay-toggle-btn"
         @click="toggleReplayConsole"
@@ -299,77 +344,74 @@ onUnmounted(() => {
             <line x1="5" y1="14" x2="11" y2="14"/>
           </svg>
         </span>
-        <span class="trigger-text">REPLAY CONSOLE</span>
+        <span class="trigger-text">REPLAY</span>
       </button>
-      <button
-        class="tactical-trigger-btn stealth-toggle-btn"
-        @click="toggleStealthIntel"
-        title="Toggle Multi-Service Mesh & Stealth Scraping HUD"
-      >
-        <span class="pulse-indicator green"></span>
-        <span class="trigger-icon">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M8 1l6 2.5v5c0 4-3 6.5-6 7.5-3-1-6-3.5-6-7.5v-5L8 1z"/>
-          </svg>
-        </span>
-        <span class="trigger-text">STEALTH INTEL</span>
-      </button>
-      <button
-        class="tactical-trigger-btn rec-toggle-btn"
-        @click="toggleMissionRecorder"
-        title="Toggle Mission Recording & Picture-in-Picture Hub"
-      >
-        <span class="pulse-indicator red"></span>
-        <span class="trigger-icon">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
-            <rect x="2" y="3" width="8" height="10" rx="1.5"/>
-            <polygon points="10 6 15 3 15 13 10 10" fill="currentColor"/>
-          </svg>
-        </span>
-        <span class="trigger-text">REC & PIP</span>
-      </button>
-      <button
-        class="tactical-trigger-btn airgap-toggle-btn"
-        @click="toggleAirgapGesture"
-        title="Toggle Touchless Air-Gap Hand & Finger Gesture Control (No Touchscreen Required)"
-      >
-        <span class="pulse-indicator purple"></span>
-        <span class="trigger-icon">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M5 9V4a1 1 0 0 1 2 0v4M7 8V2.5a1 1 0 0 1 2 0V8M9 8V3.5a1 1 0 0 1 2 0V9M11 9V5.5a1 1 0 0 1 2 0v5a4 4 0 0 1-4 4H8a4 4 0 0 1-3.5-2L3 9.5l1-1L5 9z"/>
-          </svg>
-        </span>
-        <span class="trigger-text">AIR-GAP GESTURE</span>
-      </button>
-      <button
-        class="tactical-trigger-btn local-ai-toggle-btn"
-        @click="toggleLocalNeuralAgent"
-        title="Toggle Sovereign Offline Local Neural Agent (Air-Gap ONNX / WebGPU)"
-      >
-        <span class="pulse-indicator cyan"></span>
-        <span class="trigger-icon">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="8" cy="8" r="3"/>
-            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5l1.5 1.5M3 13l1.5-1.5M11.5 4.5l1.5-1.5"/>
-          </svg>
-        </span>
-        <span class="trigger-text">LOCAL AI</span>
-      </button>
-      <button
-        class="tactical-trigger-btn reset-layout-btn"
-        @click="handleResetLayout"
-        title="Reset all draggable panels to default cockpit layout"
-      >
-        <span class="trigger-icon">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6">
-            <rect x="2" y="2" width="5" height="5" rx="1"/>
-            <rect x="9" y="2" width="5" height="5" rx="1"/>
-            <rect x="2" y="9" width="5" height="5" rx="1"/>
-            <rect x="9" y="9" width="5" height="5" rx="1"/>
-          </svg>
-        </span>
-        <span class="trigger-text">RESET DOCK</span>
-      </button>
+
+      <!-- 4. Operations Dropdown Menu (Prevents horizontal overflow & button collision) -->
+      <div class="ops-menu-wrapper">
+        <button
+          class="tactical-trigger-btn ops-menu-btn"
+          :class="{ active: isOpsMenuOpen }"
+          @click="toggleOpsMenu"
+          title="More Tactical Operations & Tools"
+        >
+          <span class="trigger-icon">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="8" cy="3" r="1.5" fill="currentColor"/>
+              <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+              <circle cx="8" cy="13" r="1.5" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="trigger-text">MORE OPS</span>
+          <span class="trigger-chevron">{{ isOpsMenuOpen ? '▲' : '▼' }}</span>
+        </button>
+
+        <!-- Dropdown Menu Content -->
+        <transition name="dropdown-fade">
+          <div v-if="isOpsMenuOpen" class="ops-dropdown-menu">
+            <button
+              class="dropdown-item-btn"
+              @click="toggleStealthIntel(); isOpsMenuOpen = false;"
+              title="Toggle Multi-Service Mesh & Stealth Scraping HUD"
+            >
+              <span class="pulse-indicator green"></span>
+              <span>Stealth Intel Mesh</span>
+            </button>
+            <button
+              class="dropdown-item-btn"
+              @click="toggleMissionRecorder(); isOpsMenuOpen = false;"
+              title="Toggle Mission Recording & Picture-in-Picture Hub"
+            >
+              <span class="pulse-indicator red"></span>
+              <span>Mission Rec & PiP</span>
+            </button>
+            <button
+              class="dropdown-item-btn"
+              @click="toggleAirgapGesture(); isOpsMenuOpen = false;"
+              title="Toggle Touchless Air-Gap Hand & Finger Gesture Control"
+            >
+              <span class="pulse-indicator purple"></span>
+              <span>Air-Gap Gestures</span>
+            </button>
+            <button
+              class="dropdown-item-btn"
+              @click="toggleLocalNeuralAgent(); isOpsMenuOpen = false;"
+              title="Toggle Sovereign Offline Local Neural Agent"
+            >
+              <span class="pulse-indicator cyan"></span>
+              <span>Local AI Enclave</span>
+            </button>
+            <button
+              class="dropdown-item-btn reset-item"
+              @click="handleResetLayout(); isOpsMenuOpen = false;"
+              title="Reset all draggable panels to default cockpit layout"
+            >
+              <span class="trigger-icon">↺</span>
+              <span>Reset Cockpit Layout</span>
+            </button>
+          </div>
+        </transition>
+      </div>
     </div>
 
     <!-- Collapsible Tactical Carousel / Grid -->
@@ -436,31 +478,91 @@ onUnmounted(() => {
 #tactical-views-root {
   position: absolute;
   top: 14px;
-  right: 180px;
-  z-index: 1000;
+  right: 70px;
+  z-index: 900;
   pointer-events: auto;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  max-width: calc(100vw - 360px);
 }
 
 .tactical-views-trigger-bar {
   display: flex;
   align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.ops-menu-wrapper {
+  position: relative;
+}
+
+.ops-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 210px;
+  background: rgba(9, 13, 22, 0.96);
+  border: 1px solid rgba(0, 246, 255, 0.4);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.85), 0 0 20px rgba(0, 246, 255, 0.2);
+  backdrop-filter: blur(20px);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdown-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.dropdown-item-btn:hover {
+  background: rgba(0, 246, 255, 0.14);
+  border-color: rgba(0, 246, 255, 0.35);
+  color: #00ffff;
+  transform: translateX(2px);
+}
+
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .tactical-trigger-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(9, 13, 22, 0.82);
-  border: 1px solid rgba(0, 246, 255, 0.4);
+  gap: 6px;
+  background: rgba(9, 13, 22, 0.85);
+  border: 1px solid rgba(0, 246, 255, 0.35);
   color: #e0f2fe;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 6px 14px;
+  letter-spacing: 0.06em;
+  padding: 6px 11px;
   border-radius: 20px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 246, 255, 0.15);
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 246, 255, 0.12);
   backdrop-filter: blur(12px);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -478,6 +580,25 @@ onUnmounted(() => {
   border-color: #00f6ff;
   color: #00f6ff;
   box-shadow: 0 0 16px rgba(0, 246, 255, 0.4);
+}
+
+@media (max-width: 1400px) {
+  .tactical-trigger-btn {
+    padding: 5px 8px;
+    font-size: 9px;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 1100px) {
+  #tactical-views-root {
+    right: 48px;
+    max-width: calc(100vw - 280px);
+  }
+  .starship-toggle-btn .trigger-text,
+  .replay-toggle-btn .trigger-text {
+    display: none;
+  }
 }
 
 .pulse-indicator {
@@ -514,9 +635,20 @@ onUnmounted(() => {
   box-shadow: 0 0 8px #00ffff;
 }
 
+.pulse-indicator.orange {
+  background: #f97316;
+  box-shadow: 0 0 8px #f97316;
+}
+
 .local-ai-toggle-btn:hover {
   border-color: #00ffff;
   box-shadow: 0 0 16px rgba(0, 255, 255, 0.4);
+}
+
+.starship-toggle-btn:hover {
+  border-color: #f97316;
+  color: #fed7aa;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.4);
 }
 
 .tactical-views-container.panel-dragging {
