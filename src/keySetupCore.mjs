@@ -58,6 +58,14 @@ export const KEY_SETUP_KEYS = Object.freeze([
     hidden: true,
   }),
   Object.freeze({
+    id: 'openrouter',
+    title: 'OPENROUTER', // i18n-ignore: provider product name
+    unlocks: msg('Multi-model tactical AI — Claude 3.5 Sonnet, DeepSeek R1, GPT-4o, Llama 3.3'),
+    getUrl: 'https://openrouter.ai/keys',
+    envVars: Object.freeze(['OPENROUTER_API_KEY']),
+    tier: 'metered',
+  }),
+  Object.freeze({
     id: 'openai',
     title: 'OPENAI', // i18n-ignore: provider product name
     unlocks: msg('Voice control — API key or ChatGPT OAuth'),
