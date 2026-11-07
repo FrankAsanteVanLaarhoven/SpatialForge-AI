@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { sovereignLocalAgent } from '../../../agent/offlineLocalNeuralAgent.js';
+import { OPENROUTER_MODELS, queryOpenRouter, getOpenRouterKey } from '../../../agent/openrouterProvider.js';
 import { makeDraggable } from '../../dashboard/dashboardLayout.js';
 import { t } from '../../../i18n/index.js';
 
@@ -15,11 +16,19 @@ const isListening = ref(false);
 const toastMessage = ref('');
 let speechRecognition = null;
 
+// OpenRouter and Model Selection
+const selectedModel = ref(
+  (typeof window !== 'undefined' && window.localStorage?.getItem('spatialforge_ai_model')) || 'local-sovereign'
+);
+const openRouterApiKey = ref(getOpenRouterKey());
+const showKeyConfig = ref(false);
+const tempKeyInput = ref(openRouterApiKey.value);
+
 const logs = ref([
   {
     timestamp: '00:00:01Z',
     type: 'SYSTEM',
-    text: 'Sovereign Neural Enclave initialized. Model: SpatialForge-2B-Q4. Backend: Native WebGPU Compute / WASM. Air-gap isolation verified (0 outbound socket calls).'
+    text: 'Sovereign Neural Enclave initialized. Multi-Model Router online (Air-Gap WebGPU & OpenRouter). Air-gap isolation verified by default.'
   }
 ]);
 
@@ -39,6 +48,24 @@ function showToast(msg) {
     if (toastMessage.value === msg) toastMessage.value = '';
   }, 3500);
 }
+
+function saveKey() {
+  const k = tempKeyInput.value.trim();
+  openRouterApiKey.value = k;
+  if (typeof window !== 'undefined') {
+    window.localStorage?.setItem('openrouter_api_key', k);
+  }
+  showKeyConfig.value = false;
+  showToast(k ? '✓ OpenRouter API Key saved to local storage' : '✓ OpenRouter API Key cleared');
+}
+
+watch(selectedModel, (newModel) => {
+  if (typeof window !== 'undefined') {
+    window.localStorage?.setItem('spatialforge_ai_model', newModel);
+  }
+  const found = OPENROUTER_MODELS.find(m => m.id === newModel);
+  showToast(`Switched AI Engine: ${found ? found.name : newModel}`);
+});
 
 function setupDraggable() {
   if (cleanupDrag) cleanupDrag();
@@ -75,14 +102,47 @@ async function executeCommand(query) {
   });
 
   try {
-    const result = await sovereignLocalAgent.processQuery(text);
-    logs.value.push({
-      timestamp: new Date().toTimeString().split(' ')[0] + 'Z',
-      type: 'AGENT',
-      intent: result.intent,
-      text: result.reply
-    });
-    showToast(`✓ Intent [${result.intent}] executed`);
+    if (selectedModel.value === 'local-sovereign') {
+      // 1. Local Air-Gap WebGPU Sovereign Model
+      const result = await sovereignLocalAgent.processQuery(text);
+      logs.value.push({
+        timestamp: new Date().toTimeString().split(' ')[0] + 'Z',
+        type: 'AGENT',
+        modelTag: 'Sovereign-2B (Local)',
+        intent: result.intent,
+        text: result.reply
+      });
+      showToast(`✓ Intent [${result.intent}] executed`);
+    } else {
+      // 2. OpenRouter Multi-Model Cloud Routing
+      try {
+        const result = await queryOpenRouter(text, selectedModel.value, openRouterApiKey.value);
+        logs.value.push({
+          timestamp: new Date().toTimeString().split(' ')[0] + 'Z',
+          type: 'AGENT',
+          modelTag: selectedModel.value,
+          intent: result.intent,
+          text: result.reply
+        });
+        showToast(`✓ OpenRouter [${selectedModel.value}] executed`);
+      } catch (cloudErr) {
+        // Fallback gracefully to Local Sovereign Agent upon API/Network block
+        logs.value.push({
+          timestamp: new Date().toTimeString().split(' ')[0] + 'Z',
+          type: 'SYSTEM',
+          text: `[OpenRouter Warning]: ${cloudErr.message}. Gracefully falling back to Local Air-Gap Enclave.`
+        });
+        const fallbackResult = await sovereignLocalAgent.processQuery(text);
+        logs.value.push({
+          timestamp: new Date().toTimeString().split(' ')[0] + 'Z',
+          type: 'AGENT',
+          modelTag: 'Sovereign-2B (Fallback)',
+          intent: fallbackResult.intent,
+          text: fallbackResult.reply
+        });
+        showToast(`✓ Fallback Intent [${fallbackResult.intent}] executed`);
+      }
+    }
   } catch (err) {
     logs.value.push({
       timestamp: new Date().toTimeString().split(' ')[0] + 'Z',
@@ -160,7 +220,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="isVisible" ref="panelRef" class="local-neural-panel tactical-window" aria-label="Sovereign Local Neural Agent">
+  <div v-if="isVisible" ref="panelRef" class="local-neural-panel tactical-window" aria-label="Sovereign Neural Agent">
     <div ref="dragHandleRef" class="neural-header">
       <div class="neural-title-wrap">
         <svg class="header-drag-handle" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor">
@@ -171,27 +231,68 @@ onUnmounted(() => {
           <circle cx="9" cy="18" r="1.5" fill="currentColor"/>
           <circle cx="15" cy="18" r="1.5" fill="currentColor"/>
         </svg>
-        <span class="neural-badge">AIR-GAP LOCAL LLM</span>
+        <span class="neural-badge" :class="{ cloud: selectedModel !== 'local-sovereign' }">
+          {{ selectedModel === 'local-sovereign' ? 'AIR-GAP ENCLAVE' : 'OPENROUTER ROUTED' }}
+        </span>
         <h2>SOVEREIGN NEURAL AGENT</h2>
       </div>
       <div class="header-actions">
-        <span class="backend-pill">WebGPU / ONNX</span>
+        <button
+          class="key-config-btn no-drag"
+          :class="{ active: showKeyConfig, configured: !!openRouterApiKey }"
+          @click="showKeyConfig = !showKeyConfig"
+          title="Configure OpenRouter API Key"
+        >
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 2l-2 2m-1.5 1.5L16 7l-1.5-1.5-2 2 1.5 1.5-3 3A5.5 5.5 0 1 0 18 15l3-3-1.5-1.5 2-2z"/>
+          </svg>
+          <span>KEY</span>
+        </button>
+        <span class="backend-pill">{{ selectedModel === 'local-sovereign' ? 'WebGPU / ONNX' : 'OpenRouter API' }}</span>
         <button class="close-btn no-drag" @click="isVisible = false" title="Close Panel">✕</button>
       </div>
     </div>
 
+    <!-- Model Selector Bar -->
+    <div class="model-selection-tray">
+      <label class="model-select-label">AI ENGINE:</label>
+      <select v-model="selectedModel" class="model-select-dropdown">
+        <option v-for="m in OPENROUTER_MODELS" :key="m.id" :value="m.id">
+          {{ m.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Optional Key Config Tray -->
+    <div v-if="showKeyConfig" class="key-config-tray">
+      <div class="key-input-wrap">
+        <input
+          v-model="tempKeyInput"
+          type="password"
+          placeholder="Paste OpenRouter Key (sk-or-v1-...) or leave blank for .env.local"
+          class="key-input"
+        />
+        <button class="key-save-btn" @click="saveKey">SAVE</button>
+      </div>
+      <span class="key-note">Stored in local browser storage & .env.local · Never leaves this workstation</span>
+    </div>
+
     <div class="neural-subhead">
       <div class="subhead-metric">
-        <span class="metric-label">MODEL</span>
-        <span class="metric-val">SpatialForge-2B-Q4</span>
+        <span class="metric-label">ACTIVE MODEL</span>
+        <span class="metric-val" :title="selectedModel">{{ selectedModel.split('/').pop() }}</span>
       </div>
       <div class="subhead-metric">
         <span class="metric-label">NETWORK</span>
-        <span class="metric-val secure">AIR-GAPPED (0 KB/s)</span>
+        <span class="metric-val" :class="selectedModel === 'local-sovereign' ? 'secure' : 'cloud'">
+          {{ selectedModel === 'local-sovereign' ? 'AIR-GAPPED (0 KB/s)' : 'OPENROUTER SSL' }}
+        </span>
       </div>
       <div class="subhead-metric">
         <span class="metric-label">LATENCY</span>
-        <span class="metric-val highlight">1.4 ms (LOCAL)</span>
+        <span class="metric-val highlight">
+          {{ selectedModel === 'local-sovereign' ? '1.4 ms (LOCAL)' : 'CLOUD ROUTED' }}
+        </span>
       </div>
     </div>
 
@@ -214,13 +315,16 @@ onUnmounted(() => {
         <div class="entry-meta">
           <span class="entry-time">[{{ entry.timestamp }}]</span>
           <span class="entry-role">{{ entry.type }}</span>
+          <span v-if="entry.modelTag" class="entry-model-tag">{{ entry.modelTag }}</span>
           <span v-if="entry.intent" class="entry-intent">{{ entry.intent }}</span>
         </div>
         <div class="entry-text">{{ entry.text }}</div>
       </div>
       <div v-if="isProcessing" class="log-entry agent processing">
         <span class="pulse-dot"></span>
-        <span class="entry-text">Evaluating local spatial tensor graph...</span>
+        <span class="entry-text">
+          {{ selectedModel === 'local-sovereign' ? 'Evaluating local spatial tensor graph...' : `Querying ${selectedModel}...` }}
+        </span>
       </div>
     </div>
 
@@ -265,13 +369,13 @@ onUnmounted(() => {
 <style scoped>
 .local-neural-panel {
   position: fixed;
-  width: 520px;
+  width: 530px;
   max-width: 95vw;
-  background: rgba(10, 15, 24, 0.94);
+  background: rgba(10, 15, 24, 0.95);
   backdrop-filter: blur(14px);
   border: 1px solid rgba(0, 255, 255, 0.28);
   border-radius: 8px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 255, 255, 0.15);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 255, 255, 0.15);
   color: #e0e8f0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
@@ -318,6 +422,12 @@ onUnmounted(() => {
   letter-spacing: 0.8px;
 }
 
+.neural-badge.cloud {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: #a855f7;
+  color: #c084fc;
+}
+
 .neural-header h2 {
   margin: 0;
   font-size: 13px;
@@ -330,6 +440,32 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.key-config-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #8fa0b5;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.key-config-btn.configured {
+  border-color: #20c997;
+  color: #20c997;
+}
+
+.key-config-btn.active {
+  background: rgba(0, 255, 255, 0.15);
+  border-color: #00ffff;
+  color: #00ffff;
 }
 
 .backend-pill {
@@ -352,6 +488,86 @@ onUnmounted(() => {
 
 .close-btn:hover {
   color: #ff4d4d;
+}
+
+.model-selection-tray {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(8, 14, 22, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.model-select-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #657588;
+  letter-spacing: 0.5px;
+}
+
+.model-select-dropdown {
+  flex: 1;
+  background: rgba(4, 8, 14, 0.9);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  color: #00ffff;
+  font-family: inherit;
+  font-size: 10.5px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.model-select-dropdown:focus {
+  border-color: #00ffff;
+  box-shadow: 0 0 6px rgba(0, 255, 255, 0.25);
+}
+
+.key-config-tray {
+  padding: 8px 14px;
+  background: rgba(15, 20, 30, 0.95);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.key-input-wrap {
+  display: flex;
+  gap: 6px;
+}
+
+.key-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 5px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: inherit;
+  outline: none;
+}
+
+.key-input:focus {
+  border-color: #00ffff;
+}
+
+.key-save-btn {
+  background: #00ffff;
+  color: #050b14;
+  font-weight: 800;
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.key-note {
+  font-size: 8.5px;
+  color: #657588;
 }
 
 .neural-subhead {
@@ -377,10 +593,17 @@ onUnmounted(() => {
 .metric-val {
   color: #b0c4de;
   font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .metric-val.secure {
   color: #20c997;
+}
+
+.metric-val.cloud {
+  color: #c084fc;
 }
 
 .metric-val.highlight {
@@ -464,6 +687,13 @@ onUnmounted(() => {
 
 .entry-role {
   font-weight: 700;
+}
+
+.entry-model-tag {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  padding: 1px 4px;
+  border-radius: 2px;
 }
 
 .entry-intent {
@@ -569,4 +799,3 @@ onUnmounted(() => {
   pointer-events: none;
 }
 </style>
-

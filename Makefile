@@ -14,7 +14,7 @@ YELLOW  := \033[1;33m
 RED     := \033[1;31m
 RESET   := \033[0m
 
-.PHONY: all build test clean services-up services-down db-init \
+.PHONY: all build test benchmark clean services-up services-down db-init \
         backend-gateway backend-crypto backend-crawler python-test client-build client-dev
 
 all: build test ## Build all services and run entire verification test suite
@@ -68,6 +68,13 @@ test-python: ## Test Python Intelligence Engine & Root Verification Suites
 	@echo -e "$(CYAN)[Testing] Python Intelligence & Adjudication Engine...$(RESET)"
 	@cd services/python-intelligence && python3 -m unittest -v test_intelligence.py
 	@python3 -m unittest discover -s engine -p 'test_*.py'
+
+benchmark: ## Execute streaming throughput and risk-coverage decision benchmarks
+	@echo -e "$(CYAN)[Benchmark] Executing Streaming Throughput & Ingest-to-Visible Latency Benchmark...$(RESET)"
+	@python3 engine/benchmark_throughput.py
+	@echo -e "$(CYAN)[Benchmark] Executing Decision Risk vs. Coverage Adversarial Benchmark...$(RESET)"
+	@python3 engine/benchmark_risk_coverage.py
+	@echo -e "$(GREEN)✓ All benchmark gates passed successfully.$(RESET)"
 
 # ------------------------------------------------------------------------------
 # 3. Infrastructure & Database Targets
