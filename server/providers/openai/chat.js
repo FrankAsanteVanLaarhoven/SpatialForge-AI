@@ -70,8 +70,11 @@ export function createOpenAiChatHandler({
   // osm_query is offered, and the prompt names it, only with Overpass, as
   // for voice.
   overpassConfigured = () => resolveOverpassUpstreams().length > 0,
-  resolveApiKey = () => process.env.OPENAI_API_KEY,
-  resolveChatModel = () => process.env.OPENAI_CHAT_MODEL || 'gpt-4.1-mini',
+  resolveApiKey = () => process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY,
+  resolveChatModel = () =>
+    process.env.OPENAI_CHAT_MODEL ||
+    process.env.OPENROUTER_MODEL ||
+    (process.env.OPENROUTER_API_KEY ? 'anthropic/claude-3.5-sonnet' : 'gpt-4.1-mini'),
   resolveProviderRateLimit = () => process.env.GEV_RATELIMIT_OPENAI_PER_MIN,
   environment = process.env,
   ...options
@@ -96,7 +99,7 @@ export function createOpenAiChatHandler({
     prepare(input) {
       const model = String(resolveChatModel()).trim();
       if (
-        !/^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,119}$/.test(model) ||
+        !/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,119}$/.test(model) ||
         /realtime|audio|tts/i.test(model)
       )
         return { errorStatus: 503 };
@@ -107,9 +110,24 @@ export function createOpenAiChatHandler({
       )
         return null;
       const overpass = overpassConfigured();
+      const currentKey = resolveApiKey();
+      const isOpenRouter =
+        !!process.env.OPENROUTER_API_KEY &&
+        (!process.env.OPENAI_API_KEY || currentKey === process.env.OPENROUTER_API_KEY);
+      const endpoint = isOpenRouter
+        ? 'https://openrouter.ai/api/v1/chat/completions'
+        : 'https://api.openai.com/v1/chat/completions';
       return {
-        endpoint: 'https://api.openai.com/v1/chat/completions',
-        headers: (key) => ({ Authorization: `Bearer ${key}` }),
+        endpoint,
+        headers: (key) => ({
+          Authorization: `Bearer ${key}`,
+          ...(isOpenRouter
+            ? {
+                'HTTP-Referer': 'https://spatialforge.ai',
+                'X-Title': 'SpatialForge AI',
+              }
+            : {}),
+        }),
         body: {
           model,
           n: 1,

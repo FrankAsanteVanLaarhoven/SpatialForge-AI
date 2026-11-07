@@ -5,6 +5,7 @@
 [![Engines](https://img.shields.io/badge/Engines-Kinematic%20%7C%20PostGIS%20%7C%20Bayesian%20Fusion-8a2be2.svg)]()
 [![WebGPU](https://img.shields.io/badge/WebGPU-100%2C000%2B%20Particles%20%40%2060FPS-00f6ff.svg)]()
 [![Local AI](https://img.shields.io/badge/Local%20Neural%20Model-Air--Gap%20ONNX%20%7C%20WebLLM-20c997.svg)]()
+[![OpenRouter AI](https://img.shields.io/badge/OpenRouter%20AI-Claude%20%7C%20DeepSeek%20%7C%20GPT--4o-a855f7.svg)]()
 [![Docker Multi-Arch](https://img.shields.io/badge/Docker%20Multi--Arch-amd64%20%7C%20arm64-blue.svg)]()
 [![Workflows](https://img.shields.io/badge/Workflows-8%20Tactical%20Theaters-orange.svg)]()
 [![Python Engine](https://img.shields.io/badge/Python%20Engine-v0.5.0a1%20Active-dc3545.svg)]()
@@ -47,6 +48,7 @@ flowchart LR
 | **Touchless Air-Gap UI** | Local computer vision hand/palm/finger detection (`AirgapGestureEngine`) enabling touchless grab-and-drop, mid-air swipe view cycling, and holographic reticle pointing on standard non-touch displays |
 | **Hardware Acceleration (WebGPU)** | Native WGSL compute shader pipeline (`WebGPUKinematicParticleEngine`) simulating 100,000+ simultaneous kinematic particles with zero CPU overhead and automatic WebGL 2 fallback |
 | **Offline Local Neural Model** | In-browser quantized sovereign small language model (`OfflineLocalNeuralAgent`, SmolLM2/2B Q4 via WebGPU) executing tactical queries with 100% air-gap isolation and zero external APIs |
+| **Multi-Model AI Selection (OpenRouter)** | Dynamic in-cockpit router supporting **Claude 3.5 Sonnet**, **DeepSeek R1**, **GPT-4o**, **Llama 3.3 70B**, and **Gemini 1.5 Pro** with autonomous failover to Local Sovereign Air-Gap model |
 | **Docker Compose Multi-Arch CI** | Automated GitHub Actions workflow building production `linux/amd64` and `linux/arm64` container images across Go Gateway, Rust Enclave, and Python Intelligence |
 | **Verified Gates** | **476 core tests PASS** · **40 autonomous engine tests PASS** · **Gate D8** (0/24 false live faults) · **Gate D8** (100% hash invariance) · **Gate D5** (100/100 traceability) · **20/20 Development Quality Gates PASS** |
 | **Explicit Non-Claims** | Sovereign intelligence and defensive evidence replay instrument. Automated offensive cyber operations, weaponization systems, and illegal CAPTCHA-bypass actions remain explicitly out of scope. |
@@ -107,6 +109,16 @@ flowchart LR
 ### 10. Automated Multi-Arch Docker CI/CD Engine (`.github/workflows/ci.yml`)
 - **Multi-Architecture Matrix:** Fully automated GitHub Actions workflow utilizing QEMU and Docker Buildx to build and verify `linux/amd64` and `linux/arm64` container images for all microservices.
 - **Container Mesh:** Multi-container `docker-compose.yml` orchestrating PostGIS 16, Redis 7.2, Go Core Gateway, Rust Crypto Enclave, Python Intelligence, and Vite Web 3D Globe with strict healthchecks.
+
+### 11. OpenRouter Multi-Model Routing & Dual-Tier AI Intelligence (`src/agent`)
+- **Frontier Multi-Model Router:** Integrated provider (`openrouterProvider.js`) supporting **Claude 3.5 Sonnet**, **DeepSeek R1**, **OpenAI GPT-4o**, **Llama 3.3 70B**, **Gemini 1.5 Pro**, and **Mistral Large** alongside the default **Local Sovereign 2B Q4** model.
+- **In-Cockpit Key Management:** Live key input tray allowing operators to store their OpenRouter API key in local workstation storage and `.env.local` without exposing credentials.
+- **Autonomous Air-Gap Failover:** If an API key is unconfigured or network connectivity is severed, the platform automatically falls back to the embedded WebGPU/ONNX Sovereign Enclave with zero disruption.
+
+### 12. Empirical Benchmark Leadership vs. Baseline ([BENCHMARK.md](BENCHMARK.md))
+- **100% Relative Decision Risk Reduction:** Evaluated across 300 clustered adversarial episodes (`benchmark_risk_coverage.py`), SpatialForge AI achieves **0.0% Decision Risk** compared to the 24.0% error rate of naive geofencing baselines (e.g. God's Eye View).
+- **Sub-105ms Streaming Latency:** Ingest-to-visible latency of **p50 = 74.0ms, p95 = 101.0ms, p99 = 103.0ms** under high-frequency stream conditions (`benchmark_throughput.py`).
+- **20× Compute Particle Density:** WebGPU WGSL compute shaders simulating **100,000+ simultaneous particles @ 60 FPS** vs CPU-limited WebGL 2 (capped at ~4,500 particles).
 
 ---
 

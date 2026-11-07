@@ -80,6 +80,9 @@ function capAtWord(text, max, locale) {
 }
 
 async function handleHudSummary(req, res) {
+  const apiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
+  const isOpenRouter = !!process.env.OPENROUTER_API_KEY && (!process.env.OPENAI_API_KEY || apiKey === process.env.OPENROUTER_API_KEY);
+
   // Capability probe: lets the HUD skip its paid place lookups when there is
   // no summary to feed them to.
   if (req.method === 'GET' && req.url?.split('?')[0] === '/status') {
@@ -88,7 +91,7 @@ async function handleHudSummary(req, res) {
     res.setHeader('Cache-Control', 'no-store');
     res.end(
       JSON.stringify({
-        configured: !keylessHudSummaryResponse(process.env.OPENAI_API_KEY),
+        configured: !keylessHudSummaryResponse(apiKey),
       }),
     );
     return;
@@ -100,7 +103,6 @@ async function handleHudSummary(req, res) {
     return;
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
   const keyless = keylessHudSummaryResponse(apiKey);
   if (keyless) {
     res.statusCode = keyless.statusCode;
@@ -118,26 +120,55 @@ async function handleHudSummary(req, res) {
   try {
     const body = await readRequestBody(req, 64 * 1024);
     const context = JSON.parse(body || '{}');
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model:
-          process.env.OPENAI_HUD_SUMMARY_MODEL ||
-          OPENAI_HUD_SUMMARY_MODEL_DEFAULT,
-        instructions: hudSummaryInstructions(context?.locale),
-        input: hudSummaryInput(context),
-        text: { format: HUD_SUMMARY_RESPONSE_FORMAT },
-        reasoning: { effort: 'minimal' },
-        max_output_tokens: 200,
-      }),
-    });
-    const data = await response.json().catch(() => ({}));
+
+    let response;
+    let summaryText = '';
+
+    if (isOpenRouter) {
+      const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet';
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://spatialforge.ai',
+          'X-Title': 'SpatialForge AI'
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: hudSummaryInstructions(context?.locale) },
+            { role: 'user', content: hudSummaryInput(context) }
+          ],
+          max_tokens: 200
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      summaryText = data?.choices?.[0]?.message?.content || '';
+    } else {
+      response = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model:
+            process.env.OPENAI_HUD_SUMMARY_MODEL ||
+            OPENAI_HUD_SUMMARY_MODEL_DEFAULT,
+          instructions: hudSummaryInstructions(context?.locale),
+          input: hudSummaryInput(context),
+          text: { format: HUD_SUMMARY_RESPONSE_FORMAT },
+          reasoning: { effort: 'minimal' },
+          max_output_tokens: 200,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      summaryText = extractOpenAiResponseText(data);
+    }
+
     const { summary, feedState } = parseHudSummaryReply(
-      extractOpenAiResponseText(data),
+      summaryText,
       context?.locale,
     );
     res.statusCode = response.ok && summary ? 200 : response.status || 502;
@@ -151,7 +182,7 @@ async function handleHudSummary(req, res) {
         feedState,
         // Never relay `data.error.message`: that is OpenAI's own wording, and
         // it carries request ids, organization hints and quota phrasing.
-        error: response.ok ? null : 'OpenAI HUD summary request failed',
+        error: response.ok ? null : 'HUD summary request failed',
       }),
     );
   } catch {
@@ -160,7 +191,7 @@ async function handleHudSummary(req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.end(
       JSON.stringify({
-        error: 'OpenAI HUD summary request failed',
+        error: 'HUD summary request failed',
       }),
     );
   }

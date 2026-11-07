@@ -22,3 +22,4 @@ test('queryOpenRouter throws clear configuration error when API key is missing',
     /OPENROUTER_API_KEY not configured/
   );
 });
+

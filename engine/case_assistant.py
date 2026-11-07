@@ -98,3 +98,62 @@ def verify_briefing_factual_grounding(briefing_result, bundle_export):
 
     return True, "All factual assertions strictly grounded in admitted evidence bundle."
 
+
+def synthesize_openrouter_case_analysis(case, cutoff, api_key=None, model="anthropic/claude-3.5-sonnet"):
+    """Synthesize an executive legal/intelligence brief using OpenRouter multi-model API."""
+    import os
+    import urllib.request
+    import json
+
+    briefing = generate_case_briefing(case, cutoff)
+    key = api_key or os.environ.get("OPENROUTER_API_KEY")
+    if not key:
+        return {
+            "synthesis": briefing["briefing_text"],
+            "model": "deterministic-engine (local)",
+            "ai_routed": False,
+            "citations": briefing["citations"]
+        }
+
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {key.strip()}",
+        "HTTP-Referer": "https://spatialforge.ai",
+        "X-Title": "SpatialForge AI",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a defense and maritime legal intelligence analyst. Summarize this bi-temporal evidence briefing into an executive brief, strictly preserving all [ID @ TIME] citations."
+            },
+            {
+                "role": "user",
+                "content": briefing["briefing_text"]
+            }
+        ],
+        "temperature": 0.2
+    }
+    try:
+        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            content = data["choices"][0]["message"]["content"]
+            return {
+                "synthesis": content,
+                "model": model,
+                "ai_routed": True,
+                "citations": briefing["citations"]
+            }
+    except Exception as err:
+        return {
+            "synthesis": briefing["briefing_text"],
+            "model": "deterministic-engine (fallback)",
+            "ai_routed": False,
+            "error": str(err),
+            "citations": briefing["citations"]
+        }
+
+
