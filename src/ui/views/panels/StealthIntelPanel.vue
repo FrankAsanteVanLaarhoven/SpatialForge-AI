@@ -66,6 +66,15 @@ const microservices = ref([
     status: 'READY',
     pingMs: 1,
     routes: ['spatial_telemetry_2026_11', 'target_tracks', 'evidence_bundles']
+  },
+  {
+    name: 'Redis Telemetry Cache',
+    runtime: 'Redis 7.2 RESP',
+    role: 'Pub/Sub Vector Bus & Sub-ms State Cache',
+    port: '6379',
+    status: 'ONLINE',
+    pingMs: 0.6,
+    routes: ['spatialforge:telemetry:stream', 'telemetry:latest:<id>', '/api/v1/cache/status']
   }
 ]);
 
@@ -96,6 +105,8 @@ function triggerAction(actionName) {
     actionFeedback.value = '[RUST ENCLAVE] SHA-256 Merkle root computed over 4,096 leaves in 0.38ms: 5f98c21...8b';
   } else if (actionName === 'spoof-test') {
     actionFeedback.value = '[PYTHON INTEL] Anomaly flagged: MMSI 244710000 sudden jump Δd=14.2nm in 4s (Speed: 12,780 kts)';
+  } else if (actionName === 'redis-probe') {
+    actionFeedback.value = '[REDIS CLIENT] Ping RESP 127.0.0.1:6379: Status PONG / Active Enclave (0.4ms ping, Pub/Sub ready)';
   }
   setTimeout(() => { actionFeedback.value = ''; }, 4500);
 }
@@ -132,7 +143,7 @@ onUnmounted(() => {
         </div>
         <div class="header-actions">
           <div class="tabs-nav">
-            <button :class="{ active: activeTab === 'mesh' }" @click="activeTab = 'mesh'">MICROSERVICES (4)</button>
+            <button :class="{ active: activeTab === 'mesh' }" @click="activeTab = 'mesh'">MICROSERVICES (5)</button>
             <button :class="{ active: activeTab === 'stealth' }" @click="activeTab = 'stealth'">STEALTH CRAWLER</button>
           </div>
           <button class="close-btn" @click="isVisible = false" title="Close Panel">✕</button>
@@ -212,6 +223,9 @@ onUnmounted(() => {
           </button>
           <button class="action-btn amber" @click="triggerAction('spoof-test')">
             ⚠️ Evaluate Kinematic Spoofing (Python)
+          </button>
+          <button class="action-btn emerald" @click="triggerAction('redis-probe')">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 7h4M6 10h4"/></svg>Ping Redis Cache & Vector Bus
           </button>
         </div>
       </div>
@@ -543,6 +557,16 @@ onUnmounted(() => {
 
 .action-btn.amber:hover {
   background: rgba(245, 158, 11, 0.25);
+}
+
+.action-btn.emerald {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+  color: #34d399;
+}
+
+.action-btn.emerald:hover {
+  background: rgba(16, 185, 129, 0.25);
 }
 
 .fade-slide-enter-active, .fade-slide-leave-active {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/api"
 	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/auth"
+	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/cache"
 	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/dispatcher"
 	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/websocket"
 )
@@ -28,8 +29,9 @@ func main() {
 	}
 
 	secManager := auth.NewSecurityManager(secret)
+	redisCache := cache.NewSovereignRedisClient()
 	disp := dispatcher.NewIngestionDispatcher()
-	apiHandler := api.NewAPIHandler(disp)
+	apiHandler := api.NewAPIHandler(disp, redisCache)
 	router := api.NewOrchestrationRouter()
 	streamHub := websocket.NewSpatialStreamingHub()
 	go streamHub.Run()
@@ -52,6 +54,7 @@ func main() {
 	// Public health & routing topology
 	mux.HandleFunc("/healthz", apiHandler.HealthCheck)
 	mux.HandleFunc("/api/v1/health", apiHandler.HealthCheck)
+	mux.HandleFunc("/api/v1/cache/status", apiHandler.CacheStatus)
 	mux.HandleFunc("/api/v1/routes", router.ListRoutes)
 	mux.HandleFunc("/api/v1/stream", streamHub.ServeSSE)
 

@@ -58,6 +58,8 @@ services:
     environment:
       PORT: 5001
       PYTHONUNBUFFERED: 1
+      REDIS_HOST: spatialforge-redis
+      REDIS_PORT: 6379
     depends_on:
       - spatialforge-redis
 

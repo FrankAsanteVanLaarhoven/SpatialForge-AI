@@ -20,10 +20,27 @@ export class SovereignGatewayClient {
   /**
    * Health check on Go Gateway and active microservices
    */
-  async checkHealth(): Promise<{ status: string; service: string; version: string }> {
+  async checkHealth(): Promise<{ status: string; service: string; version: string; cache_mode?: string }> {
     const res = await fetch(`${this.baseUrl}/api/v1/health`);
     if (!res.ok) {
       throw new Error(`Gateway health check failed: HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
+  /**
+   * Diagnostic health & status check on Redis telemetry cache and vector bus
+   */
+  async getCacheStatus(): Promise<{
+    mode: string;
+    redis_target: string;
+    redis_connected: boolean;
+    in_memory_keys: number;
+    last_checked_utc: string;
+  }> {
+    const res = await fetch(`${this.baseUrl}/api/v1/cache/status`);
+    if (!res.ok) {
+      throw new Error(`Failed to query cache status: HTTP ${res.status}`);
     }
     return res.json();
   }

@@ -14,9 +14,11 @@ import time
 from engine.trajectory_anomaly import TrajectoryAnomalyDetector, TelemetryPoint
 from engine.sensor_fusion import SpatialFusionEngine, SensorObservation
 from engine.db_postgis import PostGISDataLayer
+from engine.redis_cache import SovereignPythonCache
 
 detector = TrajectoryAnomalyDetector(max_allowed_speed_knots=50.0)
 db_layer = PostGISDataLayer()
+cache_layer = SovereignPythonCache()
 
 class IntelligenceHandler(BaseHTTPRequestHandler):
     def _send_json(self, status_code: int, data: dict):
@@ -34,8 +36,11 @@ class IntelligenceHandler(BaseHTTPRequestHandler):
                 "status": "HEALTHY",
                 "service": "spatialforge-python-intelligence",
                 "engine": "v2.0-SOTA",
-                "capabilities": ["kinematic_spoof_detection", "bayesian_sensor_fusion", "postgis_queries"]
+                "cache_mode": cache_layer.get_status()["mode"],
+                "capabilities": ["kinematic_spoof_detection", "bayesian_sensor_fusion", "postgis_queries", "redis_telemetry_cache"]
             })
+        elif self.path in ['/cache/status', '/api/v1/intelligence/cache/status']:
+            self._send_json(200, cache_layer.get_status())
         else:
             self._send_json(404, {"error": "Not Found"})
 

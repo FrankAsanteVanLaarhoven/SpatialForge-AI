@@ -72,5 +72,31 @@ class TestIntelligenceHandler(unittest.TestCase):
         self.assertEqual(data["active_origins"], 2)
         self.assertAlmostEqual(data["fused_lat"], 51.2194, places=3)
 
+    def test_cache_status_endpoint(self):
+        status_code, data = self._execute_request("GET", "/api/v1/intelligence/cache/status")
+        self.assertEqual(status_code, 200)
+        self.assertIn("mode", data)
+        self.assertIn("redis_target", data)
+        self.assertIn("redis_connected", data)
+
+    def test_cache_in_memory_lifecycle(self):
+        from engine.redis_cache import SovereignPythonCache
+        cache = SovereignPythonCache(host="127.0.0.1", port=9999) # Non-existent port to force fallback
+        self.assertFalse(cache.is_connected)
+        
+        # Test set & get
+        cache.set("spatial:test:k1", "sovereign_val")
+        self.assertEqual(cache.get("spatial:test:k1"), "sovereign_val")
+
+        # Test TTL
+        cache.set("spatial:test:exp", "ephemeral", ttl_sec=0.05)
+        self.assertEqual(cache.get("spatial:test:exp"), "ephemeral")
+        time.sleep(0.06)
+        self.assertIsNone(cache.get("spatial:test:exp"))
+
+        status = cache.get_status()
+        self.assertEqual(status["mode"], "IN_MEMORY_ENCLAVE")
+        self.assertEqual(status["in_memory_keys"], 1)
+
 if __name__ == '__main__':
     unittest.main()
