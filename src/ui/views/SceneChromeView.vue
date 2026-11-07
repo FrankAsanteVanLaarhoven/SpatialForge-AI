@@ -23,6 +23,7 @@ import EvidenceReplayPanel from './panels/EvidenceReplayPanel.vue';
 import StealthIntelPanel from './panels/StealthIntelPanel.vue';
 import MissionRecordingPanel from './panels/MissionRecordingPanel.vue';
 import AirgapGestureOverlay from './panels/AirgapGestureOverlay.vue';
+import LocalNeuralAgentPanel from './panels/LocalNeuralAgentPanel.vue';
 
 // The ACTIVE STYLE corner shows the style VisualSettings publishes.
 const { style } = storeToRefs(useDisplayStore());
@@ -127,4 +128,5 @@ const vToastText = {
   <StealthIntelPanel />
   <MissionRecordingPanel />
   <AirgapGestureOverlay />
+  <LocalNeuralAgentPanel />
 </template>

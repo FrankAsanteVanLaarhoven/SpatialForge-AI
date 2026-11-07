@@ -21,11 +21,22 @@
 *.js linguist-vendored=true
 *.mjs linguist-detectable=false
 *.mjs linguist-vendored=true
+**/*.js linguist-detectable=false
+**/*.js linguist-vendored=true
+**/*.mjs linguist-detectable=false
+**/*.mjs linguist-vendored=true
+src/**/*.js linguist-vendored=true
+src/**/*.js linguist-detectable=false
+server/**/*.js linguist-vendored=true
+server/**/*.js linguist-detectable=false
+build/**/*.js linguist-vendored=true
+build/**/*.js linguist-detectable=false
 
 # 1. Primary Frontend & Full-Stack TypeScript
 src/**/*.ts linguist-language=TypeScript linguist-detectable=true
-src/**/*.vue linguist-language=Vue linguist-detectable=true
+src/**/*.vue linguist-language=TypeScript linguist-detectable=true
 server/**/*.ts linguist-language=TypeScript linguist-detectable=true
+types/**/*.ts linguist-language=TypeScript linguist-detectable=true
 
 # 2. Rust High-Performance Cryptographic Enclave (Ed25519 & Merkle Trees)
 services/crypto-enclave/**/*.rs linguist-language=Rust linguist-detectable=true

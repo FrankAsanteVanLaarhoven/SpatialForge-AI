@@ -5,6 +5,7 @@ import {
   WIND_PATH_LIMIT,
   WIND_NARROW_PATH_LIMIT,
 } from './streamlines.js';
+import { WebGPUKinematicParticleEngine } from './webgpuKinematicParticleEngine.js';
 
 const WIND_FADE_LOW_METERS = 15000;
 const WIND_FADE_HIGH_METERS = 60000;
@@ -38,6 +39,13 @@ export function createWindGpuRendering({ cesium: C, getViewer }) {
   let material = null;
   let paused = false;
   let destroyed = false;
+  let webgpuEngine = null;
+
+  // Initialize WebGPU Hardware Acceleration asynchronously if available
+  if (typeof navigator !== 'undefined' && navigator.gpu) {
+    webgpuEngine = new WebGPUKinematicParticleEngine();
+    webgpuEngine.initialize().catch(() => {});
+  }
   const emptyDiagnostics = () => ({
     pathCount: 0,
     vertexCount: 0,
@@ -255,6 +263,9 @@ export function createWindGpuRendering({ cesium: C, getViewer }) {
     setField,
     updateVisibility,
     tick(elapsedSeconds) {
+      if (webgpuEngine && webgpuEngine.isSupported && !paused) {
+        webgpuEngine.dispatchCompute(0.016, elapsedSeconds);
+      }
       if (material && !paused && Number.isFinite(elapsedSeconds))
         material.uniforms.phaseTime = Math.max(0, elapsedSeconds) % 10000;
     },
@@ -264,14 +275,19 @@ export function createWindGpuRendering({ cesium: C, getViewer }) {
     },
     clear,
     destroy() {
+      if (webgpuEngine) {
+        webgpuEngine.destroy();
+        webgpuEngine = null;
+      }
       clear();
       destroyed = true;
     },
-    getParticleCount: () => diagnostics.pathCount,
+    getParticleCount: () => (webgpuEngine?.isSupported ? webgpuEngine.options.particleCount : diagnostics.pathCount),
     getDiagnostics: () => ({
       ...diagnostics,
       ready: cells.length > 0 && cells.every((cell) => cell.primitive.ready),
-      mode: 'gpu-streamlines',
+      mode: webgpuEngine?.isSupported ? 'webgpu-compute-100k' : 'gpu-streamlines',
+      webgpuDiagnostics: webgpuEngine ? webgpuEngine.diagnostics : null,
       displayHeightMeters: WIND_DISPLAY_HEIGHT_METERS,
     }),
   };

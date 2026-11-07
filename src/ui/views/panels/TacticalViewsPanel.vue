@@ -193,7 +193,20 @@ function toggleAirgapGesture() {
   showToast('Touchless Air-Gap Gesture Control toggled');
 }
 
+function toggleLocalNeuralAgent() {
+  window.dispatchEvent(new CustomEvent('gev:toggle-local-neural-agent'));
+  showToast('Sovereign Local Neural Agent toggled');
+}
+
 function handleAirgapSwipe(e) {
+  const targetId = e.detail?.targetId;
+  if (targetId) {
+    const view = TACTICAL_VIEWS.find(v => v.id === targetId);
+    if (view) {
+      activateView(view);
+      return;
+    }
+  }
   const dir = e.detail?.direction;
   const currentIndex = TACTICAL_VIEWS.findIndex(v => v.id === activeViewId.value);
   if (dir === 'SWIPE_RIGHT') {
@@ -327,6 +340,20 @@ onUnmounted(() => {
           </svg>
         </span>
         <span class="trigger-text">AIR-GAP GESTURE</span>
+      </button>
+      <button
+        class="tactical-trigger-btn local-ai-toggle-btn"
+        @click="toggleLocalNeuralAgent"
+        title="Toggle Sovereign Offline Local Neural Agent (Air-Gap ONNX / WebGPU)"
+      >
+        <span class="pulse-indicator cyan"></span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="8" r="3"/>
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5l1.5 1.5M3 13l1.5-1.5M11.5 4.5l1.5-1.5"/>
+          </svg>
+        </span>
+        <span class="trigger-text">LOCAL AI</span>
       </button>
       <button
         class="tactical-trigger-btn reset-layout-btn"
@@ -480,6 +507,16 @@ onUnmounted(() => {
 .pulse-indicator.purple {
   background: #a855f7;
   box-shadow: 0 0 8px #a855f7;
+}
+
+.pulse-indicator.cyan {
+  background: #00ffff;
+  box-shadow: 0 0 8px #00ffff;
+}
+
+.local-ai-toggle-btn:hover {
+  border-color: #00ffff;
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.4);
 }
 
 .tactical-views-container.panel-dragging {
