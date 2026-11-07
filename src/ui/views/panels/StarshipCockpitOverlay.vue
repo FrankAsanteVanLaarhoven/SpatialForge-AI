@@ -135,6 +135,10 @@ function openMedia(url) {
   if (url) window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+function toggleLayer(layerId) {
+  window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: layerId } }));
+}
+
 onMounted(() => {
   // Connect to live Cesium viewer
   if (window.viewer) {
@@ -357,6 +361,13 @@ onUnmounted(() => {
           </button>
           <button
             class="tab-btn"
+            :class="{ active: activeTab === 'infra' }"
+            @click="activeTab = 'infra'"
+          >
+            INFRA & ENERGY
+          </button>
+          <button
+            class="tab-btn"
             :class="{ active: activeTab === 'media' }"
             @click="activeTab = 'media'"
           >
@@ -423,7 +434,70 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- TAB 2: LIVE MEDIA & BROADCAST PROVIDERS -->
+        <!-- TAB 2: CRITICAL INFRASTRUCTURE & ENERGY SOURCES -->
+        <div v-if="activeTab === 'infra'" class="tab-content">
+          <!-- DATACENTER LAYER SECTION -->
+          <div class="infra-card">
+            <div class="infra-card-header">
+              <span class="infra-title">🏢 HYPERSCALE DATA CENTERS</span>
+              <span class="infra-badge-count">4,300+ MAPPED</span>
+            </div>
+            <p class="infra-desc">Global AI compute clusters, colocation campuses (Equinix, Digital Realty, AWS, Google Cloud, Azure) with verified power draw.</p>
+            <div class="infra-action-row">
+              <button class="infra-toggle-btn" type="button" @click="toggleLayer('local-datacenters')">
+                📡 TOGGLE 4,300+ DATA CENTERS
+              </button>
+            </div>
+            <div class="infra-sample-list">
+              <div class="infra-sample-item">
+                <span class="sample-dot blue"></span>
+                <span class="sample-name">Digital Realty FRA1 (77.4 MW)</span>
+                <span class="sample-loc">Frankfurt, DE</span>
+              </div>
+              <div class="infra-sample-item">
+                <span class="sample-dot blue"></span>
+                <span class="sample-name">Digital Realty MRS3 (24.0 MW)</span>
+                <span class="sample-loc">Marseille, FR</span>
+              </div>
+              <div class="infra-sample-item">
+                <span class="sample-dot blue"></span>
+                <span class="sample-name">Google Inzai Hyperscale Campus</span>
+                <span class="sample-loc">Chiba, JP</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ENERGY SOURCES & POWER GRID SECTION -->
+          <div class="infra-card">
+            <div class="infra-card-header">
+              <span class="infra-title">⚡ ENERGY SOURCES & POWER GRID</span>
+              <span class="infra-badge-count energy">500+ DAMS & GRIDS</span>
+            </div>
+            <p class="infra-desc">Hydroelectric generating stations, satellite radiative heat (FIRMS MW), substations, and global subsea fiber cables.</p>
+            <div class="infra-action-col">
+              <button class="infra-toggle-btn energy" type="button" @click="toggleLayer('local-dams')">
+                🌊 TOGGLE DAMS & HYDRO PLANTS
+              </button>
+              <button class="infra-toggle-btn cables" type="button" @click="toggleLayer('telegeography-submarine-cables')">
+                🌐 TOGGLE SUBSEA FIBER CABLES
+              </button>
+            </div>
+            <div class="infra-sample-list">
+              <div class="infra-sample-item">
+                <span class="sample-dot green"></span>
+                <span class="sample-name">HE Podlubnik Hydro (330 KW)</span>
+                <span class="sample-loc">Slovenia</span>
+              </div>
+              <div class="infra-sample-item">
+                <span class="sample-dot green"></span>
+                <span class="sample-name">FIRMS Radiative Power Radar</span>
+                <span class="sample-loc">Global Satellite MW</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: LIVE MEDIA & BROADCAST PROVIDERS -->
         <div v-if="activeTab === 'media'" class="tab-content">
           <div class="media-list-container">
             <div
@@ -1218,6 +1292,144 @@ onUnmounted(() => {
 .launch-stream-btn:hover {
   background: #38bdf8;
   color: #000;
+}
+
+/* INFRASTRUCTURE & ENERGY STYLES */
+.infra-card {
+  background: rgba(10, 15, 30, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  padding: 0.75rem;
+  backdrop-filter: blur(8px);
+}
+
+.infra-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.infra-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+}
+
+.infra-badge-count {
+  font-size: 0.58rem;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.infra-badge-count.energy {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.infra-desc {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  line-height: 1.35;
+  margin-bottom: 0.6rem;
+}
+
+.infra-action-row,
+.infra-action-col {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.infra-action-col {
+  flex-direction: column;
+}
+
+.infra-toggle-btn {
+  flex: 1;
+  background: rgba(14, 165, 233, 0.15);
+  border: 1px solid #38bdf8;
+  color: #e0f2fe;
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.infra-toggle-btn:hover {
+  background: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.infra-toggle-btn.energy {
+  border-color: #22c55e;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.infra-toggle-btn.energy:hover {
+  background: rgba(34, 197, 94, 0.35);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+}
+
+.infra-toggle-btn.cables {
+  border-color: #a855f7;
+  color: #d8b4fe;
+  background: rgba(168, 85, 247, 0.15);
+}
+
+.infra-toggle-btn.cables:hover {
+  background: rgba(168, 85, 247, 0.35);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+}
+
+.infra-sample-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: rgba(2, 6, 23, 0.5);
+  border-radius: 4px;
+  padding: 0.4rem;
+}
+
+.infra-sample-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.58rem;
+  gap: 0.4rem;
+}
+
+.sample-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sample-dot.blue { background: #38bdf8; }
+.sample-dot.green { background: #22c55e; }
+
+.sample-name {
+  flex: 1;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sample-loc {
+  color: #64748b;
+  font-size: 0.55rem;
 }
 </style>
 
