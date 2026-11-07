@@ -89,6 +89,9 @@ db-init: ## Initialize PostGIS database schema and partitioned telemetry tables
 # ------------------------------------------------------------------------------
 # 4. Runtime & Development Targets
 # ------------------------------------------------------------------------------
+run-all: ## Launch all microservices (Go Gateway, Python Intel, 3D Client) simultaneously
+	@./scripts/start-all.sh
+
 run-gateway: backend-gateway ## Run Go API Gateway & Reverse-Proxy Router on port 8080
 	@echo -e "$(GREEN)[Run] Starting SpatialForge Gateway on :8080...$(RESET)"
 	@./services/core-gateway/bin/gateway
