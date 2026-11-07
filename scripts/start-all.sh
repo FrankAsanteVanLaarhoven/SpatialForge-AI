@@ -64,3 +64,4 @@ echo -e "${GREEN}   Rust Cryptographic Enclave:      services/crypto-enclave/tar
 echo -e "${GREEN}================================================================================${RESET}"
 
 npm run dev
+

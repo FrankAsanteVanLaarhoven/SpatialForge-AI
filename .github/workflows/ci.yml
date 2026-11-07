@@ -148,3 +148,57 @@ jobs:
 
       - name: Build production bundle
         run: npm run build
+
+  go-services:
+    name: Go Gateway & Stealth Crawler
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Test Go Core Gateway
+        run: |
+          cd services/core-gateway
+          go test -v ./...
+      - name: Test Stealth Crawler
+        run: |
+          cd services/stealth-crawler
+          go test -v ./...
+
+  rust-crypto-enclave:
+    name: Rust Cryptographic Enclave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Test Merkle Proofs & Ed25519 Signing
+        run: |
+          cd services/crypto-enclave
+          cargo test --verbose
+
+  python-intelligence:
+    name: Python Kinematics & Spatial Intelligence
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test Python Intelligence Engine
+        run: |
+          cd services/python-intelligence
+          python3 -m unittest -v test_intelligence.py
+      - name: Test Engine Adjudication Suites
+        run: |
+          python3 -m unittest discover -s engine -p 'test_*.py'
+
