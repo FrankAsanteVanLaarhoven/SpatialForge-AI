@@ -109,3 +109,4 @@ func (h *SpatialStreamingHub) ServeSSE(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
