@@ -165,6 +165,10 @@ function toggleReplayConsole() {
   window.dispatchEvent(new CustomEvent('gev:toggle-evidence-replay'));
 }
 
+function toggleStealthIntel() {
+  window.dispatchEvent(new CustomEvent('gev:toggle-stealth-intel'));
+}
+
 function handleGlobalToggle() {
   isOpen.value = !isOpen.value;
 }
@@ -201,6 +205,15 @@ onUnmounted(() => {
         <span class="pulse-indicator amber"></span>
         <span class="trigger-icon">⚖️</span>
         <span class="trigger-text">REPLAY CONSOLE</span>
+      </button>
+      <button
+        class="tactical-trigger-btn stealth-toggle-btn"
+        @click="toggleStealthIntel"
+        title="Toggle Multi-Service Mesh & Stealth Scraping HUD"
+      >
+        <span class="pulse-indicator green"></span>
+        <span class="trigger-icon">🛡️</span>
+        <span class="trigger-text">STEALTH INTEL</span>
       </button>
     </div>
 
@@ -302,6 +315,16 @@ onUnmounted(() => {
   border-radius: 50%;
   box-shadow: 0 0 8px #00f6ff;
   animation: pulse-glow 2s infinite ease-in-out;
+}
+
+.pulse-indicator.amber {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.pulse-indicator.green {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
 }
 
 @keyframes pulse-glow {
