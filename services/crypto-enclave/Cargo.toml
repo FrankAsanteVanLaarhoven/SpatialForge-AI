@@ -1,0 +1,14 @@
+[package]
+name = "spatialforge-crypto"
+version = "1.0.0"
+edition = "2021"
+authors = ["Frank Asante-Van Laarhoven <frankleroyvan@gmail.com>"]
+description = "Sovereign High-Security & Memory-Safe Cryptographic Enclave for Evidence Attestation"
+
+[dependencies]
+sha2 = "0.10"
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
