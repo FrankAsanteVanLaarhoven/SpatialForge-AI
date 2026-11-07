@@ -188,6 +188,23 @@ function toggleMissionRecorder() {
   window.dispatchEvent(new CustomEvent('gev:toggle-mission-recording'));
 }
 
+function toggleAirgapGesture() {
+  window.dispatchEvent(new CustomEvent('gev:toggle-airgap-gesture'));
+  showToast('Touchless Air-Gap Gesture Control toggled');
+}
+
+function handleAirgapSwipe(e) {
+  const dir = e.detail?.direction;
+  const currentIndex = TACTICAL_VIEWS.findIndex(v => v.id === activeViewId.value);
+  if (dir === 'SWIPE_RIGHT') {
+    const nextIndex = (currentIndex + 1) % TACTICAL_VIEWS.length;
+    activateView(TACTICAL_VIEWS[nextIndex]);
+  } else if (dir === 'SWIPE_LEFT') {
+    const prevIndex = (currentIndex - 1 + TACTICAL_VIEWS.length) % TACTICAL_VIEWS.length;
+    activateView(TACTICAL_VIEWS[prevIndex]);
+  }
+}
+
 function handleResetLayout() {
   resetDashboardLayout();
   showToast('✓ Dashboard layout reset to default cockpit positions');
@@ -221,10 +238,12 @@ function handleGlobalToggle() {
 
 onMounted(() => {
   window.addEventListener('gev:toggle-tactical-views', handleGlobalToggle);
+  window.addEventListener('gev:airgap-swipe', handleAirgapSwipe);
 });
 
 onUnmounted(() => {
   window.removeEventListener('gev:toggle-tactical-views', handleGlobalToggle);
+  window.removeEventListener('gev:airgap-swipe', handleAirgapSwipe);
   if (cleanupDrag) cleanupDrag();
 });
 </script>
@@ -295,6 +314,19 @@ onUnmounted(() => {
           </svg>
         </span>
         <span class="trigger-text">REC & PIP</span>
+      </button>
+      <button
+        class="tactical-trigger-btn airgap-toggle-btn"
+        @click="toggleAirgapGesture"
+        title="Toggle Touchless Air-Gap Hand & Finger Gesture Control (No Touchscreen Required)"
+      >
+        <span class="pulse-indicator purple"></span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M5 9V4a1 1 0 0 1 2 0v4M7 8V2.5a1 1 0 0 1 2 0V8M9 8V3.5a1 1 0 0 1 2 0V9M11 9V5.5a1 1 0 0 1 2 0v5a4 4 0 0 1-4 4H8a4 4 0 0 1-3.5-2L3 9.5l1-1L5 9z"/>
+          </svg>
+        </span>
+        <span class="trigger-text">AIR-GAP GESTURE</span>
       </button>
       <button
         class="tactical-trigger-btn reset-layout-btn"
@@ -443,6 +475,11 @@ onUnmounted(() => {
 .pulse-indicator.red {
   background: #ef4444;
   box-shadow: 0 0 8px #ef4444;
+}
+
+.pulse-indicator.purple {
+  background: #a855f7;
+  box-shadow: 0 0 8px #a855f7;
 }
 
 .tactical-views-container.panel-dragging {

@@ -41,6 +41,7 @@ flowchart LR
 | **Supported Platforms** | **TypeScript 5 + Vue 3** frontend client & **Cesium 3D Globe** (macOS/Linux/Windows) · **Go 1.26** Gateway & Stealth Crawler · **Rust 1.90** Crypto Enclave · **Python 3.11** Intelligence Loopback |
 | **Picture-in-Picture & Recording** | Native OS Picture-in-Picture (`video.requestPictureInPicture()`) · Draggable In-Dashboard Mini Recon PiP · Multi-Resolution Screen Capture (720p/1080p/4K @ 60 FPS) with Ed25519 DSSE Provenance JSON |
 | **Customizable Dashboard** | Fully draggable and customizable HUD panels (`makeDraggable`) with viewport clamping, touch & pointer capture, persistent coordinates via `localStorage`, and one-click layout reset (`Alt+R` / `RESET DOCK`) |
+| **Touchless Air-Gap UI** | Local computer vision hand/palm/finger detection (`AirgapGestureEngine`) enabling touchless grab-and-drop, mid-air swipe view cycling, and holographic reticle pointing on standard non-touch displays |
 | **Verified Gates** | **476 core tests PASS** · **40 autonomous engine tests PASS** · **Gate D8** (0/24 false live faults) · **Gate D8** (100% hash invariance) · **Gate D5** (100/100 traceability) · **20/20 Development Quality Gates PASS** |
 | **Explicit Non-Claims** | Sovereign intelligence and defensive evidence replay instrument. Automated offensive cyber operations, weaponization systems, and illegal CAPTCHA-bypass actions remain explicitly out of scope. |
 
@@ -79,6 +80,13 @@ flowchart LR
 - **Native OS Picture-in-Picture:** Streams live 3D Cesium WebGL globe directly into macOS Picture-in-Picture overlay, allowing operators to monitor target areas while working across different applications or desktop spaces.
 - **In-Dashboard Mini Recon Monitor:** Floating draggable HUD mini-screen with tactical crosshair and telemetry readout.
 - **Cryptographic Video Attestation:** Generates `.webm` video captures accompanied by an Ed25519 DSSE provenance JSON file containing camera orientation, bounds, timestamp, and SHA-256 digest.
+
+### 7. Touchless Air-Gap Gesture Control (`src/ui/airgap`)
+- **Zero-Cloud Local Vision:** Uses local webcam frames processed via pure client-side computer vision (YCbCr chromatic skin segmentation, contour tracking, fingertip extrema detection) with zero cloud network transmission (air-gap compliant).
+- **Grab & Drop on Standard Displays:** Detects index finger & thumb pinch distance (< 38px) to synthesize touchless `pointerdown` and `pointermove` events, allowing operators to pick up, drag, and drop HUD panels across ordinary, non-touchscreen desktop monitors.
+- **Mid-Air Swipe Choreography:** Computes horizontal palm centroid velocity to detect left/right air swipes that instantly cycle through tactical recon views or advance evidence shots.
+- **Holographic HUD Reticle:** Floating glowing cyan crosshairs follow index fingertip in real-time with exponential smoothing ($\alpha = 0.32$), providing tactile targeting without physical contact.
+- **Built-in Spatial Simulator:** Automatically provides fallback spatial trackpad emulation when camera hardware is disconnected or restricted.
 
 ---
 
