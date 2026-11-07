@@ -4,3 +4,4 @@
 
 export * from './offlineLocalNeuralAgent.js';
 export type { LocalNeuralAgentQuery } from '../types/spatialforge.d.ts';
+

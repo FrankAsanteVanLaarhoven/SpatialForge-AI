@@ -69,3 +69,4 @@ export interface LocalNeuralAgentQuery {
   telemetry?: Record<string, unknown> | null;
   inferenceTimeMs: number;
 }
+

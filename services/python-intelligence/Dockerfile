@@ -15,3 +15,4 @@ EXPOSE 5001
 ENV PORT=5001
 
 CMD ["python3", "api.py"]
+

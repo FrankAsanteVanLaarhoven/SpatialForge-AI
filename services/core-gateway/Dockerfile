@@ -17,3 +17,4 @@ COPY --from=builder /app/core-gateway /app/core-gateway
 EXPOSE 8080
 ENV PORT=8080
 CMD ["/app/core-gateway"]
+

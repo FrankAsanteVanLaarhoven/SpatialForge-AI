@@ -4,3 +4,4 @@
 
 export * from './airgapGestureEngine.js';
 export type { AirgapHandGesture } from '../../types/spatialforge.d.ts';
+

@@ -45,3 +45,4 @@ test('WebGPUKinematicParticleEngine initializes and provides fallback on non-Web
   const initialized = await engine.initialize();
   assert.equal(initialized, false); // Node environment has no navigator.gpu, cleanly returns false
 });
+

@@ -15,3 +15,4 @@ WORKDIR /app
 COPY --from=builder /app/target/release/spatialforge-crypto /app/spatialforge-crypto
 
 ENTRYPOINT ["/app/spatialforge-crypto"]
+
