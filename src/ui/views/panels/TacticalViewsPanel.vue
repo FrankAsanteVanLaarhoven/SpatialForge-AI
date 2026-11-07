@@ -1,12 +1,16 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useDisplayStore } from '../../stores/display.js';
 import { t } from '../../../i18n/index.js';
+import { makeDraggable, resetDashboardLayout } from '../../dashboard/dashboardLayout.js';
 
 const display = useDisplayStore();
 const isOpen = ref(false);
 const activeViewId = ref('austin-nadir');
 const toastMessage = ref('');
+const panelContainerRef = ref(null);
+const headerDragRef = ref(null);
+let cleanupDrag = null;
 
 const TACTICAL_VIEWS = [
   {
@@ -180,6 +184,37 @@ function toggleStealthIntel() {
   window.dispatchEvent(new CustomEvent('gev:toggle-stealth-intel'));
 }
 
+function toggleMissionRecorder() {
+  window.dispatchEvent(new CustomEvent('gev:toggle-mission-recording'));
+}
+
+function handleResetLayout() {
+  resetDashboardLayout();
+  showToast('✓ Dashboard layout reset to default cockpit positions');
+}
+
+function setupDraggable() {
+  if (cleanupDrag) cleanupDrag();
+  if (panelContainerRef.value && headerDragRef.value) {
+    cleanupDrag = makeDraggable(
+      panelContainerRef.value,
+      headerDragRef.value,
+      'tactical-views-panel',
+      { x: Math.max(20, Math.floor((window.innerWidth - 820) / 2)), y: 64 }
+    );
+  }
+}
+
+watch(isOpen, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      setupDraggable();
+    });
+  } else {
+    if (cleanupDrag) cleanupDrag();
+  }
+});
+
 function handleGlobalToggle() {
   isOpen.value = !isOpen.value;
 }
@@ -190,6 +225,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('gev:toggle-tactical-views', handleGlobalToggle);
+  if (cleanupDrag) cleanupDrag();
 });
 </script>
 
@@ -246,17 +282,54 @@ onUnmounted(() => {
         </span>
         <span class="trigger-text">STEALTH INTEL</span>
       </button>
+      <button
+        class="tactical-trigger-btn rec-toggle-btn"
+        @click="toggleMissionRecorder"
+        title="Toggle Mission Recording & Picture-in-Picture Hub"
+      >
+        <span class="pulse-indicator red"></span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="2" y="3" width="8" height="10" rx="1.5"/>
+            <polygon points="10 6 15 3 15 13 10 10" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="trigger-text">REC & PIP</span>
+      </button>
+      <button
+        class="tactical-trigger-btn reset-layout-btn"
+        @click="handleResetLayout"
+        title="Reset all draggable panels to default cockpit layout"
+      >
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="2" y="2" width="5" height="5" rx="1"/>
+            <rect x="9" y="2" width="5" height="5" rx="1"/>
+            <rect x="2" y="9" width="5" height="5" rx="1"/>
+            <rect x="9" y="9" width="5" height="5" rx="1"/>
+          </svg>
+        </span>
+        <span class="trigger-text">RESET DOCK</span>
+      </button>
     </div>
 
     <!-- Collapsible Tactical Carousel / Grid -->
     <transition name="tactical-fade">
-      <aside v-if="isOpen" class="tactical-views-container" aria-label="Tactical Reconnaissance Views">
-        <div class="tactical-header">
+      <aside v-if="isOpen" ref="panelContainerRef" class="tactical-views-container" aria-label="Tactical Reconnaissance Views">
+        <div ref="headerDragRef" class="tactical-header">
           <div class="tactical-title-wrap">
+            <svg class="header-drag-handle" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="vertical-align: -2px; margin-right: 6px; opacity: 0.7;">
+              <circle cx="9" cy="6" r="1.5" fill="currentColor"/>
+              <circle cx="15" cy="6" r="1.5" fill="currentColor"/>
+              <circle cx="9" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="9" cy="18" r="1.5" fill="currentColor"/>
+              <circle cx="15" cy="18" r="1.5" fill="currentColor"/>
+            </svg>
             <span class="tactical-badge">SOVEREIGN RECON</span>
             <h2>UNIQUE OPERATIONAL PERSPECTIVES</h2>
           </div>
-          <button class="tactical-close-btn" @click="isOpen = false" title="Close Panel">✕</button>
+          <button class="tactical-close-btn no-drag" @click="isOpen = false" title="Close Panel">✕</button>
         </div>
 
         <div class="tactical-card-grid">
@@ -365,6 +438,20 @@ onUnmounted(() => {
 .pulse-indicator.green {
   background: #10b981;
   box-shadow: 0 0 8px #10b981;
+}
+
+.pulse-indicator.red {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.tactical-views-container.panel-dragging {
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 246, 255, 0.45);
+  border-color: #00f6ff;
+}
+
+.header-drag-handle {
+  cursor: grab;
 }
 
 @keyframes pulse-glow {

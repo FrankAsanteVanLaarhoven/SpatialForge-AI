@@ -1,8 +1,34 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { makeDraggable } from '../../dashboard/dashboardLayout.js';
 
 const isVisible = ref(false);
 const activeTab = ref('mesh'); // 'mesh' | 'stealth' | 'live-vectors'
+const panelOverlayRef = ref(null);
+const headerDragRef = ref(null);
+let cleanupDrag = null;
+
+function setupDraggable() {
+  if (cleanupDrag) cleanupDrag();
+  if (panelOverlayRef.value && headerDragRef.value) {
+    cleanupDrag = makeDraggable(
+      panelOverlayRef.value,
+      headerDragRef.value,
+      'stealth-intel-panel',
+      { x: Math.max(20, Math.floor((window.innerWidth - 760) / 2)), y: 72 }
+    );
+  }
+}
+
+watch(isVisible, (val) => {
+  if (val) {
+    nextTick(() => {
+      setupDraggable();
+    });
+  } else {
+    if (cleanupDrag) cleanupDrag();
+  }
+});
 
 const microservices = ref([
   {
@@ -89,10 +115,18 @@ onUnmounted(() => {
 
 <template>
   <transition name="fade-slide">
-    <aside v-if="isVisible" class="stealth-intel-overlay" aria-label="Stealth Intel and Microservices Console">
+    <aside v-if="isVisible" ref="panelOverlayRef" class="stealth-intel-overlay" aria-label="Stealth Intel and Microservices Console">
       <!-- Header -->
-      <div class="stealth-header">
+      <div ref="headerDragRef" class="stealth-header">
         <div class="brand-badge-wrap">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="vertical-align: -2px; margin-right: 6px; opacity: 0.7;">
+            <circle cx="9" cy="6" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="6" r="1.5" fill="currentColor"/>
+            <circle cx="9" cy="12" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+            <circle cx="9" cy="18" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="18" r="1.5" fill="currentColor"/>
+          </svg>
           <span class="stealth-pill-badge">SOVEREIGN ARCHITECTURE</span>
           <h2>STEALTH INTEL & ORCHESTRATION MESH</h2>
         </div>
@@ -171,7 +205,7 @@ onUnmounted(() => {
         <!-- Interactive Control Bar -->
         <div class="stealth-action-bar">
           <button class="action-btn cyan" @click="triggerAction('cycle-profile')">
-            🔄 Rotate Browser TLS Profile (Go)
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><path d="M2 8a6 6 0 1 0 1.5-4M2 3v5h5"/></svg>Rotate Browser TLS Profile (Go)
           </button>
           <button class="action-btn purple" @click="triggerAction('merkle-proof')">
             ⚡ Verify SHA-256 Merkle Proof (Rust)

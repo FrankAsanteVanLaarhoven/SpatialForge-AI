@@ -154,7 +154,7 @@ export function createDroneAirspaceLayer({
   const layer = {
     id: 'drone-airspace',
     name: 'Prohibited & Restricted Airspace',
-    icon: '🚫',
+    icon: '⊘',
     source: 'FAA SUA',
     updateInterval: 3600000,
 

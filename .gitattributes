@@ -13,35 +13,38 @@
 
 # ==============================================================================
 # GitHub Linguist Classification Overrides for SpatialForge AI Platform
-# Replaces legacy JavaScript detection with TypeScript, Rust, Go, and Python
+# Ensures TypeScript, Rust, Go, Python, and PostGIS dominate repository statistics
 # ==============================================================================
 
-# 1. Classify core client codebase as TypeScript
-src/**/*.js linguist-language=TypeScript
-src/**/*.ts linguist-language=TypeScript
-src/**/*.vue linguist-language=Vue
+# Exclude all legacy and runtime JavaScript from language breakdown
+*.js linguist-detectable=false
+*.js linguist-vendored=true
+*.mjs linguist-detectable=false
+*.mjs linguist-vendored=true
 
-# 2. Classify backend proxies and Node services as TypeScript
-server/**/*.js linguist-language=TypeScript
-server/**/*.ts linguist-language=TypeScript
+# 1. Primary Frontend & Full-Stack TypeScript
+src/**/*.ts linguist-language=TypeScript linguist-detectable=true
+src/**/*.vue linguist-language=Vue linguist-detectable=true
+server/**/*.ts linguist-language=TypeScript linguist-detectable=true
 
-# 3. Classify Rust Cryptographic Enclave
-services/crypto-enclave/**/*.rs linguist-language=Rust
-services/crypto-enclave/Cargo.toml linguist-language=Rust
+# 2. Rust High-Performance Cryptographic Enclave (Ed25519 & Merkle Trees)
+services/crypto-enclave/**/*.rs linguist-language=Rust linguist-detectable=true
+services/crypto-enclave/Cargo.toml linguist-language=Rust linguist-detectable=true
 
-# 4. Classify Go API Gateway & Stealth Crawler
-services/core-gateway/**/*.go linguist-language=Go
-services/stealth-crawler/**/*.go linguist-language=Go
+# 3. Go Core API Gateway & Stealth OSINT Crawler
+services/core-gateway/**/*.go linguist-language=Go linguist-detectable=true
+services/stealth-crawler/**/*.go linguist-language=Go linguist-detectable=true
 
-# 5. Classify Python Intelligence Engine & Verification Tests
-services/python-intelligence/**/*.py linguist-language=Python
-engine/**/*.py linguist-language=Python
+# 4. Python Sovereign Intelligence Engine & Kinematic Spoofing
+services/python-intelligence/**/*.py linguist-language=Python linguist-detectable=true
+engine/**/*.py linguist-language=Python linguist-detectable=true
+*.py linguist-language=Python linguist-detectable=true
 
-# 6. Classify PostgreSQL & PostGIS Spatial Schemas
-storage/postgres/*.sql linguist-language=PLpgSQL
+# 5. PostgreSQL + PostGIS Spatial Schema & Telemetry Partitioning
+storage/postgres/*.sql linguist-language=PLpgSQL linguist-detectable=true
+*.sql linguist-language=PLpgSQL linguist-detectable=true
 
-# 7. Mark build tooling, vendored geographic datasets, and test fixtures as vendored
-# so they do not pollute the core repository language statistics
+# 6. Vendored Datasets, Build Bundles & Test Specs
 tools/** linguist-vendored
 scripts/** linguist-vendored
 src/data/local_data/** linguist-vendored

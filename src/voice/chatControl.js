@@ -303,7 +303,7 @@ export function bindChatControl({ ui, session, onOpen, dataManager }) {
         throw new Error(t('Message was not sent. Try again.'));
       message(
         'user',
-        [text, ...attached.map((item) => `📎 ${item.name}`)].join('\n'),
+        [text, ...attached.map((item) => `[ATTACHMENT] ${item.name}`)].join('\n'),
       );
       attachments.clear();
       if (draft === sent) setDraft('');

@@ -248,7 +248,7 @@ export function createFirePerimetersLayer({
   const layer = {
     id: 'fire-perimeters',
     name: 'Fire Perimeters',
-    icon: '🔥',
+    icon: '△',
     source: 'NIFC WFIGS',
     updateInterval: 300000,
 

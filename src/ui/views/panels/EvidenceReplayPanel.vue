@@ -1,10 +1,36 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { makeDraggable } from '../../dashboard/dashboardLayout.js';
 
 // Display mode: 'none' (closed, 100% full 3D globe), 'hud' (side overlay), or 'workbench' (full 3-column workstation)
 const viewMode = ref('none');
 const selectedCutoff = ref('early'); // 'early' = 14:05:05Z, 'late' = 14:05:20Z
 const toastMessage = ref('');
+const hudPanelRef = ref(null);
+const hudDragHeaderRef = ref(null);
+let cleanupHudDrag = null;
+
+function setupHudDraggable() {
+  if (cleanupHudDrag) cleanupHudDrag();
+  if (hudPanelRef.value && hudDragHeaderRef.value) {
+    cleanupHudDrag = makeDraggable(
+      hudPanelRef.value,
+      hudDragHeaderRef.value,
+      'evidence-replay-hud',
+      { x: Math.max(20, window.innerWidth - 440), y: 80 }
+    );
+  }
+}
+
+watch(viewMode, (newMode) => {
+  if (newMode === 'hud') {
+    nextTick(() => {
+      setupHudDraggable();
+    });
+  } else {
+    if (cleanupHudDrag) cleanupHudDrag();
+  }
+});
 
 function handleReplayToggle() {
   viewMode.value = viewMode.value === 'none' ? 'hud' : 'none';
@@ -388,9 +414,17 @@ function showToast(msg) {
     </div>
 
     <!-- ── Mode 2: Compact Docked HUD (Floating over 3D Cesium) ── -->
-    <aside v-if="viewMode === 'hud'" class="evidence-replay-hud" aria-label="SpatialForge Docked Replay HUD">
-      <div class="hud-header">
+    <aside v-if="viewMode === 'hud'" ref="hudPanelRef" class="evidence-replay-hud" aria-label="SpatialForge Docked Replay HUD">
+      <div ref="hudDragHeaderRef" class="hud-header">
         <div class="hud-brand">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="vertical-align: -2px; margin-right: 6px; opacity: 0.7;">
+            <circle cx="9" cy="6" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="6" r="1.5" fill="currentColor"/>
+            <circle cx="9" cy="12" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+            <circle cx="9" cy="18" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="18" r="1.5" fill="currentColor"/>
+          </svg>
           <svg viewBox="0 0 32 32" fill="none" class="hud-icon">
             <circle cx="16" cy="16" r="14" fill="#090d16" stroke="#00f6ff" stroke-width="1.5"/>
             <polygon points="16,6 23,10 16,14 9,10" fill="#38bdf8" stroke="#00f6ff" stroke-width="1"/>

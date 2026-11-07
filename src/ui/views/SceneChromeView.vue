@@ -21,6 +21,7 @@ import GlobeActions from './panels/GlobeActions.vue';
 import TacticalViewsPanel from './panels/TacticalViewsPanel.vue';
 import EvidenceReplayPanel from './panels/EvidenceReplayPanel.vue';
 import StealthIntelPanel from './panels/StealthIntelPanel.vue';
+import MissionRecordingPanel from './panels/MissionRecordingPanel.vue';
 
 // The ACTIVE STYLE corner shows the style VisualSettings publishes.
 const { style } = storeToRefs(useDisplayStore());
@@ -123,4 +124,5 @@ const vToastText = {
   <TacticalViewsPanel />
   <EvidenceReplayPanel />
   <StealthIntelPanel />
+  <MissionRecordingPanel />
 </template>

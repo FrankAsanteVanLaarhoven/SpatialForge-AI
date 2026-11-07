@@ -657,7 +657,7 @@ export function createGhostMapsLayer({
   const layer = {
     id: GHOSTMAPS_LAYER_ID,
     name: 'S2 GhostMaps',
-    icon: '👻',
+    icon: '◈',
     source: 'S2 Underground',
     // Pushes arrive within seconds over the event stream; this interval is
     // the backstop if the stream is down.

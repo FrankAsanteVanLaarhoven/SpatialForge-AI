@@ -459,7 +459,7 @@ export function createStreetLevelLayer({
   const layer = {
     id: STREET_LEVEL_LAYER_ID,
     name: 'Street Level',
-    icon: '📷',
+    icon: '⌖',
     /** The sources usable on this map (Street View only on Google 3D). */
     get source() {
       return listedEntries()

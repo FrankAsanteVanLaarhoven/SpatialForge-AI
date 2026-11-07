@@ -22,7 +22,11 @@ const tilted = computed(() => Boolean(camera.value?.tilted));
     <span class="material-symbols-outlined" aria-hidden="true">layers_clear</span>
   </button>
   <button id="share-btn" type="button" :aria-label="t('Copy share link')" :title="t('Copy share link')" @click="act('share')">
-    <span class="share-icon" aria-hidden="true">&#x1F517;</span>
+    <span class="share-icon" aria-hidden="true">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M6.5 9.5a3.5 3.5 0 0 0 5 0l2-2a3.5 3.5 0 0 0-5-5L7.5 3.5M9.5 6.5a3.5 3.5 0 0 0-5 0l-2 2a3.5 3.5 0 0 0 5 5L8.5 12.5"/>
+      </svg>
+    </span>
   </button>
   <button id="tilt-map-view" type="button" :aria-label="tilted ? t('Return map to straight-down view') : t('Tilt map to oblique view')" :aria-pressed="String(tilted)" :title="t('Toggle straight-down and tilted map views')" @click="act('tilt')">
     <span class="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
