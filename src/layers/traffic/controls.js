@@ -60,7 +60,7 @@ export function createControls({ state: layerState, services, parts, source }) {
 
     name: 'Street Traffic',
 
-    icon: '🚗',
+    icon: '◈',
 
     source: 'OpenStreetMap / TomTom',
 

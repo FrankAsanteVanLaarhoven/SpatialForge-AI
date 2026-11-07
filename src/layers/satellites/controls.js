@@ -93,7 +93,7 @@ export function createControls({ state: layerState, services, parts, source }) {
 
     name: 'Satellites',
 
-    icon: '🛰️',
+    icon: '⌖',
 
     source: 'CelesTrak',
 

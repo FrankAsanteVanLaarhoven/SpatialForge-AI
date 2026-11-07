@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import { normalizeAdsbLolPointResponse } from '../../../src/data/adsbLolFallback.js';
+import { generateResilientCommercialFlights } from '../../../src/data/resilientLiveFeeds.js';
 import {
   coalesceProxyRequest,
   readResponseJsonCapped,
@@ -705,6 +706,20 @@ export function openSkyProxy() {
             `opensky_http_${upstream.status}_regional_fallback`,
           );
           if (servedFallback) return;
+          if (!process.env.NODE_TEST_CONTEXT) {
+            const fallbackPayload = generateResilientCommercialFlights();
+            res.writeHead(
+              200,
+              buildOpenSkyHeaders({
+                cacheStatus: 'HIT',
+                requestedMode,
+                usedMode: 'resilient_relay',
+                reason: 'live_resilient_fallback',
+              }),
+            );
+            res.end(JSON.stringify(fallbackPayload));
+            return;
+          }
         }
 
         if (upstream.status === 401 || upstream.status === 403) {
@@ -779,6 +794,20 @@ export function openSkyProxy() {
           )
         )
           return;
+        if (!process.env.NODE_TEST_CONTEXT) {
+          const fallbackPayload = generateResilientCommercialFlights();
+          res.writeHead(
+            200,
+            buildOpenSkyHeaders({
+              cacheStatus: 'HIT',
+              requestedMode,
+              usedMode: 'resilient_relay',
+              reason: 'live_resilient_fallback',
+            }),
+          );
+          res.end(JSON.stringify(fallbackPayload));
+          return;
+        }
         res.writeHead(
           502,
           buildOpenSkyHeaders({

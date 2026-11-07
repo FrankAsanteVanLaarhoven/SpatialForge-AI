@@ -21,25 +21,34 @@ src/**/*.js linguist-language=TypeScript
 src/**/*.ts linguist-language=TypeScript
 src/**/*.vue linguist-language=Vue
 
-# 2. Classify Rust Cryptographic Enclave
+# 2. Classify backend proxies and Node services as TypeScript
+server/**/*.js linguist-language=TypeScript
+server/**/*.ts linguist-language=TypeScript
+
+# 3. Classify Rust Cryptographic Enclave
 services/crypto-enclave/**/*.rs linguist-language=Rust
 services/crypto-enclave/Cargo.toml linguist-language=Rust
 
-# 3. Classify Go API Gateway & Stealth Crawler
+# 4. Classify Go API Gateway & Stealth Crawler
 services/core-gateway/**/*.go linguist-language=Go
 services/stealth-crawler/**/*.go linguist-language=Go
 
-# 4. Classify Python Intelligence Engine & Verification Tests
+# 5. Classify Python Intelligence Engine & Verification Tests
 services/python-intelligence/**/*.py linguist-language=Python
 engine/**/*.py linguist-language=Python
 
-# 5. Classify PostgreSQL & PostGIS Spatial Schemas
+# 6. Classify PostgreSQL & PostGIS Spatial Schemas
 storage/postgres/*.sql linguist-language=PLpgSQL
 
-# 6. Mark build tooling, vendored geographic datasets, and test fixtures as vendored
+# 7. Mark build tooling, vendored geographic datasets, and test fixtures as vendored
 # so they do not pollute the core repository language statistics
 tools/** linguist-vendored
 scripts/** linguist-vendored
 src/data/local_data/** linguist-vendored
 server/providers/cctv/catalogs/** linguist-vendored
 dist/** linguist-vendored
+**/*.test.js linguist-vendored
+**/*.test.mjs linguist-vendored
+**/*.test.ts linguist-vendored
+tests/** linguist-vendored
+public/** linguist-vendored

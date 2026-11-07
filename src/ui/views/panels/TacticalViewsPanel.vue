@@ -21,7 +21,7 @@ const TACTICAL_VIEWS = [
     pitch: -89.5,
     style: 'retro',
     desc: 'High-altitude orthogonal satellite surveillance of Texas Capitol dome, Great Walk & urban corridor.',
-    icon: '🏛️'
+    iconKey: 'nadir'
   },
   {
     id: 'antwerp-approach',
@@ -35,7 +35,7 @@ const TACTICAL_VIEWS = [
     pitch: -52,
     style: 'normal',
     desc: 'Bi-temporal evidence replay zone for vessel-A zone occupancy & multi-broker AIS correlation.',
-    icon: '⚓'
+    iconKey: 'maritime'
   },
   {
     id: 'cape-pad39a',
@@ -49,7 +49,7 @@ const TACTICAL_VIEWS = [
     pitch: -58,
     style: 'normal',
     desc: 'Launch pad & crawlerway for SpaceX Starship/Falcon orbital trajectory insertions.',
-    icon: '🚀'
+    iconKey: 'rocket'
   },
   {
     id: 'hormuz-choke',
@@ -63,7 +63,7 @@ const TACTICAL_VIEWS = [
     pitch: -65,
     style: 'surveillance',
     desc: 'Vital hydrocarbon shipping artery with live AIS tracking and electronic warfare detection.',
-    icon: '🌊'
+    iconKey: 'chokepoint'
   },
   {
     id: 'panama-locks',
@@ -77,7 +77,7 @@ const TACTICAL_VIEWS = [
     pitch: -54,
     style: 'normal',
     desc: 'Multi-sensor maritime locks with automated transponder gate occupancy validation.',
-    icon: '🚢'
+    iconKey: 'locks'
   },
   {
     id: 'suez-lake',
@@ -91,7 +91,7 @@ const TACTICAL_VIEWS = [
     pitch: -62,
     style: 'thermal',
     desc: 'Strategic convoy staging anchorage monitoring subsea telecommunication cable crossings.',
-    icon: '🛰️'
+    iconKey: 'satellite'
   },
   {
     id: 'tokyo-cyber',
@@ -105,7 +105,7 @@ const TACTICAL_VIEWS = [
     pitch: -48,
     style: 'noir',
     desc: 'Ultra-dense skyscraper canyon with cyber telemetry and commuter transit surveillance.',
-    icon: '🗼'
+    iconKey: 'cyber'
   },
   {
     id: 'leo-terminator',
@@ -119,7 +119,7 @@ const TACTICAL_VIEWS = [
     pitch: -88,
     style: 'normal',
     desc: 'High-altitude satellite reconnaissance track tracing atmospheric limb and day/night boundary.',
-    icon: '🌐'
+    iconKey: 'orbit'
   }
 ];
 
@@ -151,6 +151,17 @@ function activateView(v) {
       },
       duration: 2.4
     });
+  }
+
+  // Auto-enable relevant layers for the selected tactical scenario
+  if (v.id === 'antwerp-approach' || v.id === 'hormuz-choke' || v.id === 'panama-locks' || v.id === 'suez-lake') {
+    window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'ais-live-vessels' } }));
+    window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'military' } }));
+  } else if (v.id === 'austin-nadir' || v.id === 'tokyo-cyber') {
+    window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'flights' } }));
+  } else if (v.id === 'cape-pad39a' || v.id === 'leo-terminator') {
+    window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'satellites' } }));
+    window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'rocket-launches' } }));
   }
 
   showToast(`[TACTICAL RECON] Active: ${v.title} · ${v.location}`);
@@ -193,7 +204,16 @@ onUnmounted(() => {
         title="Toggle Unique Tactical Recon Views"
       >
         <span class="pulse-indicator"></span>
-        <span class="trigger-icon">🎯</span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="8" r="6"/>
+            <circle cx="8" cy="8" r="2" fill="currentColor"/>
+            <line x1="8" y1="0" x2="8" y2="3"/>
+            <line x1="8" y1="13" x2="8" y2="16"/>
+            <line x1="0" y1="8" x2="3" y2="8"/>
+            <line x1="13" y1="8" x2="16" y2="8"/>
+          </svg>
+        </span>
         <span class="trigger-text">TACTICAL VIEWS ({{ TACTICAL_VIEWS.length }})</span>
         <span class="trigger-chevron">{{ isOpen ? '▲' : '▼' }}</span>
       </button>
@@ -203,7 +223,14 @@ onUnmounted(() => {
         title="Toggle Bi-Temporal Evidence Replay & Case Adjudication Console"
       >
         <span class="pulse-indicator amber"></span>
-        <span class="trigger-icon">⚖️</span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <line x1="8" y1="2" x2="8" y2="14"/>
+            <line x1="2" y1="5" x2="14" y2="5"/>
+            <path d="M4 5l-2 5h4L4 5zM12 5l-2 5h4l-2-5z"/>
+            <line x1="5" y1="14" x2="11" y2="14"/>
+          </svg>
+        </span>
         <span class="trigger-text">REPLAY CONSOLE</span>
       </button>
       <button
@@ -212,7 +239,11 @@ onUnmounted(() => {
         title="Toggle Multi-Service Mesh & Stealth Scraping HUD"
       >
         <span class="pulse-indicator green"></span>
-        <span class="trigger-icon">🛡️</span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M8 1l6 2.5v5c0 4-3 6.5-6 7.5-3-1-6-3.5-6-7.5v-5L8 1z"/>
+          </svg>
+        </span>
         <span class="trigger-text">STEALTH INTEL</span>
       </button>
     </div>
@@ -237,7 +268,16 @@ onUnmounted(() => {
             @click="activateView(v)"
           >
             <div class="card-top">
-              <span class="card-icon">{{ v.icon }}</span>
+              <span class="card-icon">
+                <svg v-if="v.iconKey === 'nadir'" viewBox="0 0 20 20" class="tactical-svg" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="2"/><circle cx="10" cy="10" r="3"/><line x1="10" y1="1" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="19"/><line x1="1" y1="10" x2="5" y2="10"/><line x1="15" y1="10" x2="19" y2="10"/></svg>
+                <svg v-else-if="v.iconKey === 'maritime'" viewBox="0 0 20 20" class="tactical-svg" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="4" r="2.5"/><line x1="10" y1="6.5" x2="10" y2="17"/><line x1="6" y1="9" x2="14" y2="9"/><path d="M4 12c0 4 3 6 6 6s6-2 6-6"/></svg>
+                <svg v-else-if="v.iconKey === 'rocket'" viewBox="0 0 20 20" class="tactical-svg" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 2l3 5v5l-3-2-3 2V7l3-5z"/><path d="M7 12l-3 4 2 1 2-2M13 12l3 4-2 1-2-2"/><circle cx="10" cy="17" r="1.5" fill="currentColor"/></svg>
+                <svg v-else-if="v.iconKey === 'chokepoint'" viewBox="0 0 20 20" class="tactical-svg" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6c3 2 4-2 7 0s4-2 7 0M3 10c3 2 4-2 7 0s4-2 7 0M3 14c3 2 4-2 7 0s4-2 7 0"/></svg>
+                <svg v-else-if="v.iconKey === 'locks'" viewBox="0 0 20 20" class="tactical-svg" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 13l2-6h12l2 6H2z"/><rect x="7" y="4" width="6" height="3" fill="currentColor"/><line x1="10" y1="2" x2="10" y2="4"/></svg>
+                <svg v-else-if="v.iconKey === 'satellite'" viewBox="0 0 20 20" class="tactical-svg" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><ellipse cx="10" cy="10" rx="7" ry="2.5"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>
+                <svg v-else-if="v.iconKey === 'cyber'" viewBox="0 0 20 20" class="tactical-svg" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="5" height="10"/><rect x="8" y="3" width="5" height="14"/><rect x="13" y="9" width="4" height="8"/><line x1="10.5" y1="1" x2="10.5" y2="3"/></svg>
+                <svg v-else-if="v.iconKey === 'orbit'" viewBox="0 0 20 20" class="tactical-svg" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6"/><path d="M2 10a8 8 0 0116 0" stroke-dasharray="2 2"/></svg>
+              </span>
               <span class="card-tag">{{ v.tag }}</span>
               <span v-if="v.style !== 'normal'" class="card-style-badge">{{ v.style.toUpperCase() }}</span>
             </div>
@@ -333,6 +373,9 @@ onUnmounted(() => {
 }
 
 .trigger-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 13px;
 }
 
@@ -456,7 +499,21 @@ onUnmounted(() => {
 }
 
 .card-icon {
-  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: rgba(0, 246, 255, 0.08);
+  border: 1px solid rgba(0, 246, 255, 0.25);
+  color: #00f6ff;
+  box-shadow: inset 0 0 6px rgba(0, 246, 255, 0.05);
+}
+
+.tactical-svg {
+  width: 15px;
+  height: 15px;
 }
 
 .card-tag {

@@ -21,12 +21,12 @@ Traditional geospatial monitoring tools blend visual approximations with uncalib
 
 ```mermaid
 flowchart LR
-    A["🛰️ Raw OSINT Feeds\n(ADS-B, AIS, TLE, CCTV)"] --> B["🥷 Go Stealth Crawler\n(JA3/JA4 TLS Mimicry\nProxy Circuit Breaker\nGaussian Jitter)"]
-    B --> C["⚡ Rust Crypto Enclave\n(Zero-Alloc Wire Parsing\nSHA-256 Merkle Proofs\nEd25519 DSSE Signing)"]
-    C --> D["🧠 Python Intelligence\n(Kinematic Spoof Detection\nBayesian Sensor Fusion\nDark Vessel Analytics)"]
-    D --> E["🗄️ PostgreSQL + PostGIS\n(Partitioned Telemetry\nGIST Spatial Indexing\nCorridor Validation)"]
-    E --> F["🌐 Go Core Gateway\n(HMAC Session Security\nReverse-Proxy Routing\nReal-Time SSE/WS Hub)"]
-    F --> G["💻 3D Cesium GIS Client\n(TypeScript + Vue 3\nBi-Temporal Replay HUD\n8 Tactical Recon Views)"]
+    A["[OSINT Telemetry Ingestion]\nADS-B · AIS · TLE · CCTV\nRaw Multi-Domain Feeds"] --> B["[Go Stealth Crawler]\nJA3/JA4 TLS Fingerprint Mimicry\nQuarantine Circuit-Breaker\nGaussian Jitter Pacing"]
+    B --> C["[Rust Crypto Enclave]\nZero-Allocation Deserialization\nDeterministic SHA-256 Merkle Root\nEd25519 DSSE Signing"]
+    C --> D["[Python Intelligence Engine]\nKinematic Spoof & Teleport Detection\nBayesian Sensor Fusion\nDark Vessel Transponder Silence"]
+    D --> E["[PostgreSQL + PostGIS]\nPartitioned Telemetry Storage\nGIST Spatial R-Tree Indexing\nCorridor Conformance Routines"]
+    E --> F["[Go Core Gateway]\nConstant-Time HMAC Authentication\nReverse-Proxy API Dispatcher\nReal-Time SSE/WS Telemetry Hub"]
+    F --> G["[3D Cesium GIS Client]\nTypeScript 5 Strict Engine\nBi-Temporal Replay Workstation\n8 Sovereign Tactical Recon Views"]
 ```
 
 ---
@@ -99,7 +99,7 @@ flowchart LR
 
 ---
 
-## 🛠️ Master Makefile Orchestration
+## Master Makefile Orchestration
 
 The root **[`Makefile`](file:///Users/favl/Downloads/geospatial-evidence-replay/spatialforge-ai/Makefile)** coordinates the entire multi-language platform:
 
@@ -139,7 +139,7 @@ make run-client          # Launches the 3D Cesium Web UI on :4173
 
 ---
 
-## 📄 License & Intellectual Property
+## License & Intellectual Property
 
 Copyright © 2026 **Frank Asante-Van Laarhoven**. All rights reserved.
 

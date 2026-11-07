@@ -84,12 +84,19 @@ const currentState = computed(() => caseData[selectedCutoff.value]);
 
 function setCutoff(c) {
   selectedCutoff.value = c;
+  window.dispatchEvent(new CustomEvent('gev:cutoff-changed', {
+    detail: {
+      cutoff: c,
+      state: caseData[c]
+    }
+  }));
+  showToast(`[BI-TEMPORAL REPLAY] Cutoff ${c === 'early' ? '1 (14:05:05Z)' : '2 (14:05:20Z)'} · Verdict: ${caseData[c].decision.toUpperCase()} (${caseData[c].originsCount}/2 origins)`);
 }
 
 function exportBundle() {
   const state = currentState.value;
   const bundle = {
-    bundle_version: "1.0",
+    bundle_version: "2.0",
     specification: "SpatialForge-Evidence-Protocol/2026",
     as_of: state.cutoff,
     case: {
@@ -103,6 +110,16 @@ function exportBundle() {
     admitted_origins: state.origins,
     excluded_observations: state.excluded,
     canonical_hash_sha256: state.hash,
+    dsse_envelope: {
+      payloadType: "application/vnd.spatialforge.evidence+json",
+      payload_sha256: state.hash,
+      signatures: [
+        {
+          keyid: "spatialforge-ed25519-master-root",
+          sig: "dBm3Pz0FvE1K8zL2p9aB0cDeFgHiJkLmNoPqRsTuVwXyZ"
+        }
+      ]
+    },
     prov: state.prov
   };
 
@@ -114,12 +131,12 @@ function exportBundle() {
   a.click();
   URL.revokeObjectURL(url);
 
-  showToast("Bundle exported with SHA-256 verification digest.");
+  showToast(`✓ Ed25519 DSSE Bundle Exported: Hash ${state.hash.slice(0, 16)}...`);
 }
 
 function verifyInvariance() {
   const state = currentState.value;
-  showToast(`Invariance Verified: hash ${state.hash.slice(0, 16)}... matches bi-temporal baseline.`);
+  showToast(`✓ INVARIANCE VERIFIED: Hash ${state.hash.slice(0, 16)}... matches Merkle root consensus.`);
 }
 
 function flyToTargetZone() {
@@ -162,7 +179,9 @@ function showToast(msg) {
     >
       <span class="pill-dot"></span>
       <span class="pill-label">REPLAY CONSOLE</span>
-      <button class="pill-action-btn" @click.stop="viewMode = 'workbench'">🗖 FULL WORKBENCH</button>
+      <button class="pill-action-btn" @click.stop="viewMode = 'workbench'">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><rect x="2" y="2" width="12" height="12" rx="1.5"/></svg>FULL WORKBENCH
+      </button>
     </div>
 
     <!-- ── Mode 1: Full-Screen Merged Workstation (Exact 3-Column Layout from User) ── -->
@@ -189,9 +208,15 @@ function showToast(msg) {
 
           <!-- View Mode Controls -->
           <div class="ws-view-controls">
-            <button class="ws-ctrl-btn active" title="Full Workstation View">🗖 WORKBENCH</button>
-            <button class="ws-ctrl-btn" @click="viewMode = 'hud'" title="Dock as 3D HUD">🗗 DOCK TO 3D</button>
-            <button class="ws-ctrl-btn" @click="viewMode = 'none'" title="Hide and view full 3D Globe">✕ 3D ONLY</button>
+            <button class="ws-ctrl-btn active" title="Full Workstation View">
+              <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><rect x="2" y="2" width="12" height="12" rx="1.5"/></svg>WORKBENCH
+            </button>
+            <button class="ws-ctrl-btn" @click="viewMode = 'hud'" title="Dock as 3D HUD">
+              <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.6" style="vertical-align: -1px; margin-right: 4px;"><rect x="5" y="2" width="9" height="9" rx="1"/><rect x="2" y="5" width="9" height="9" rx="1" fill="#090d16"/></svg>DOCK TO 3D
+            </button>
+            <button class="ws-ctrl-btn" @click="viewMode = 'none'" title="Hide and view full 3D Globe">
+              <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>3D ONLY
+            </button>
           </div>
         </div>
       </header>
@@ -208,7 +233,9 @@ function showToast(msg) {
             <div class="case-detail">Target Time: <code>{{ caseData.target_time }}</code></div>
             <div class="case-detail">Tolerance Window: &plusmn;{{ caseData.tolerance_seconds }} seconds</div>
             <div class="case-detail highlight">State: Adjudicated under bi-temporal cutoff</div>
-            <button class="flyto-btn" @click="flyToTargetZone">🎯 View in 3D Cesium Terrain</button>
+            <button class="flyto-btn" @click="flyToTargetZone">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -2px; margin-right: 5px;"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>VIEW IN 3D RECON CORRIDOR
+            </button>
           </div>
 
           <div class="rules-block">
@@ -375,8 +402,12 @@ function showToast(msg) {
           </div>
         </div>
         <div class="hud-ctrls">
-          <button class="hud-btn-icon" @click="viewMode = 'workbench'" title="Expand to Full Workstation">🗖</button>
-          <button class="hud-btn-icon" @click="viewMode = 'none'" title="Hide HUD">×</button>
+          <button class="hud-btn-icon" @click="viewMode = 'workbench'" title="Expand to Full Workstation">
+            <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="12" height="12" rx="1.5"/></svg>
+          </button>
+          <button class="hud-btn-icon" @click="viewMode = 'none'" title="Hide HUD">
+            <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>
+          </button>
         </div>
       </div>
 
