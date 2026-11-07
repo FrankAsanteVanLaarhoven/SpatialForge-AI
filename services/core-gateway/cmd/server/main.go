@@ -13,6 +13,7 @@ import (
 	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/api"
 	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/auth"
 	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/dispatcher"
+	"github.com/FrankAsanteVanLaarhoven/spatialforge-ai/services/core-gateway/internal/websocket"
 )
 
 func main() {
@@ -30,6 +31,8 @@ func main() {
 	disp := dispatcher.NewIngestionDispatcher()
 	apiHandler := api.NewAPIHandler(disp)
 	router := api.NewOrchestrationRouter()
+	streamHub := websocket.NewSpatialStreamingHub()
+	go streamHub.Run()
 
 	// Register microservice backends (default or environment overridden)
 	pythonIntelURL := os.Getenv("PYTHON_INTELLIGENCE_URL")
@@ -50,6 +53,7 @@ func main() {
 	mux.HandleFunc("/healthz", apiHandler.HealthCheck)
 	mux.HandleFunc("/api/v1/health", apiHandler.HealthCheck)
 	mux.HandleFunc("/api/v1/routes", router.ListRoutes)
+	mux.HandleFunc("/api/v1/stream", streamHub.ServeSSE)
 
 	// Protected core endpoints
 	mux.HandleFunc("/api/v1/telemetry", secManager.Middleware(apiHandler.IngestTelemetry))

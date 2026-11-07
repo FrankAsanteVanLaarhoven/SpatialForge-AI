@@ -31,3 +31,4 @@ export interface AnomalyReport {
   details: string;
   confidenceScore: number;
 }
+

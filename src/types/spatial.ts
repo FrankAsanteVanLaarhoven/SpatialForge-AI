@@ -25,3 +25,4 @@ export interface CorridorBoundary {
   minAltitudeM?: number;
   maxAltitudeM?: number;
 }
+

@@ -1,74 +1,96 @@
-# 🌐 SpatialForge AI — Sovereign Spatial Intelligence
+# 🌐 SpatialForge AI — Sovereign Spatial Intelligence Platform
 
-**SpatialForge AI** is a sovereign spatial intelligence, real-time tactical reconnaissance, and bi-temporal geospatial evidence replay platform. It pairs high-fidelity 3D Cesium planetary visualization with deterministic multi-origin sensor adjudication, W3C PROV-O derivation, and SHA-256 evidence bundles.
+**SpatialForge AI** is a sovereign spatial intelligence, real-time tactical reconnaissance, and bi-temporal geospatial evidence replay platform. It combines a high-fidelity 3D Cesium planetary visualization client with an enterprise-grade multi-service backend powered by **TypeScript**, **Rust**, **Go**, **Python**, and **PostgreSQL + PostGIS**.
 
 ![SpatialForge AI](public/logo.svg)
 
 ---
 
-## 🚀 Key Features
+## 🏛️ Modern Sovereign Platform Architecture
 
-* **Photorealistic 3D Globe & Sensor Telemetry:** Real-time satellite tracking, maritime AIS transponders, aircraft ADS-B feeds, seismic events, CCTV streams, and subsea cables.
-* **Inception Planetary Motion Splash Screen:** Procedural rotating globe backdrop with SpaceX-class orbital rocket flyoff and particle exhaust effects.
-* **Custom Proprietary Vector Logo:** Isometric faceted forge prism with gyroscopic orbital rings and dynamic pointer-gaze tracking physics.
-* **8 Unique Tactical Recon Perspectives:** 1-click tactical view switcher with calibrated camera geometry, altitude, heading, and sensor filters:
-  1. **Texas Capitol Nadir Recon (Austin, TX):** High-altitude orthogonal satellite surveillance (`30.2747° N, 97.7404° W · 1,180m ALT · -89.5° Pitch · Retro CRT Scanline Filter`).
-  2. **Port of Antwerp Approach-A (Belgium):** Maritime bi-temporal adjudication corridor (`51.2750° N, 4.3180° E · 1,650m ALT`).
-  3. **SpaceX Pad 39A Launch Complex (Cape Canaveral, FL):** Starship/Falcon launch pad, crawlerway, and orbital flight path (`28.6083° N, 80.6041° W · 1,350m ALT`).
-  4. **Strait of Hormuz Chokepoint (Oman / Iran):** Strategic hydrocarbon maritime corridor (`26.5667° N, 56.4500° E · 35,000m ALT · NVG Surveillance Filter`).
-  5. **Miraflores Locks (Panama Canal):** Inter-oceanic transit locks with automated transponder gate occupancy validation (`8.9972° N, 79.5931° W · 1,600m ALT`).
-  6. **Great Bitter Lake Convoy Grid (Suez Canal, Egypt):** Strategic convoy staging anchorage monitoring subsea telecommunication cable crossings (`30.3333° N, 32.3667° E · 22,000m ALT · FLIR Thermal Filter`).
-  7. **Shinjuku Cyber Metropolis (Tokyo, Japan):** Ultra-dense skyscraper canyon with cyber telemetry and commuter transit surveillance (`35.6905° N, 139.6995° E · 950m ALT · Film Noir Filter`).
-  8. **Low Earth Orbit Terminator (Global Kinetic Track):** High-altitude satellite reconnaissance track tracing atmospheric limb and day/night boundary (`18.0000° N, 40.0000° E · 4,500km ALT`).
-* **Integrated Bi-Temporal Evidence Replay HUD:** Dockable workstation overlay for legal and operational adjudication:
-  * Bi-temporal decision replay across `as_of` cutoffs (`14:05:05 UTC` vs `14:05:20 UTC`).
-  * 2-Origin Adjudication Rule enforcement (deduplicating single-transponder multi-broker echoes).
-  * Canonical SHA-256 evidence bundle generation (`export_bundle`) and delayed stream invariance verification.
-  * W3C PROV-O derivation graphs (`wasDerivedFrom`).
-* **Autonomous Verification Engine (`engine/`):**
-  * 40 unit test suites passing across all pilot gates (D8 False Live, D8 Invariance, D5 Traceability).
-  * SOTA Decision Risk validation under Geifman & El-Yaniv (2017) over 300 clustered episodes.
-  * Active Sensor Selection under Denzler & Brown (2002) maximizing expected information gain ($\Delta E / \Delta t$).
+SpatialForge AI is built as a high-performance, modular sovereign architecture:
 
----
-
-## 🛠️ Quick Start
-
-### 1. Install & Run the 3D Client
-
-```sh
-# Install dependencies
-npm install
-
-# Start the Vite development server
-npm run dev
 ```
-
-Open **[http://localhost:4173/](http://localhost:4173/)** to launch SpatialForge 3D.
-
-### 2. Run the Verification & Evidence Replay Engine
-
-```sh
-cd engine
-
-# Run all 40 unit tests
-python3 -m unittest -v
-
-# Run individual gate tests
-python3 -m unittest test_port_case.py -v
-python3 -m unittest test_false_live.py -v
-python3 -m unittest test_traceability.py -v
-python3 -m unittest test_antwerp_replay.py -v
-
-# Run Decision Risk benchmark
-python3 benchmark_risk_coverage.py
+spatialforge-platform/
+├── Makefile                               # Unified build, test, and container orchestrator
+├── docker-compose.yml                     # Local PostGIS 16 + Redis telemetry stack
+│
+├── services/
+│   ├── core-gateway/                      # [Go 1.26] Sovereign API Gateway, Session Security & Reverse Proxy Router
+│   │   ├── cmd/server/main.go             # High-throughput multiplexer (:8080)
+│   │   ├── internal/auth/                 # Constant-time token verification, HMAC-SHA256, IP rate limiting
+│   │   ├── internal/dispatcher/           # Ingestion hashing, bi-temporal consensus, and event fan-out
+│   │   ├── internal/websocket/            # Real-time SSE/WebSocket spatial streaming hub
+│   │   └── internal/api/router.go         # Dynamic reverse-proxy routing & microservice topology
+│   │
+│   ├── crypto-enclave/                    # [Rust 1.90] Memory-Safe Cryptographic Attestation Enclave
+│   │   ├── src/merkle.rs                  # Zero-allocation SHA-256 Merkle root & proof calculation
+│   │   ├── src/signer.rs                  # Ed25519 keypair generation, bundle signing, and verification
+│   │   └── src/main.rs                    # Fast CLI & IPC attestation binary (spatialforge-crypto)
+│   │
+│   ├── stealth-crawler/                   # [Go 1.26] Military-Grade Stealth OSINT Ingestion Engine
+│   │   ├── internal/fingerprint/          # JA3/JA4 TLS handshake randomization & browser mimicry
+│   │   ├── internal/proxy/                # Rotating proxy pool with latency scoring & quarantine circuit breaker
+│   │   ├── internal/throttle/             # Humanized pacing via Gaussian jitter distribution
+│   │   └── internal/collector/            # Stealth ADS-B OpenSky & maritime AIS ingestion
+│   │
+│   └── python-intelligence/               # [Python 3.11] Advanced Spatial Analytics & ML
+│       ├── engine/trajectory_anomaly.py   # Kinematic spoofing & dark vessel transponder gap detection
+│       ├── engine/sensor_fusion.py        # Bayesian/Kalman multi-origin uncertainty fusion
+│       └── engine/db_postgis.py           # PostgreSQL/PostGIS spatial geometry query & write builder
+│
+├── storage/
+│   └── postgres/init_postgis.sql          # Partitioned telemetry tables, GIST indices & corridor procedures
+│
+└── spatialforge-ai/                       # [Vue 3 + TypeScript + Cesium 3D] Modernized Sovereign Client
+    ├── tsconfig.json                      # Strict TypeScript compiler configuration
+    └── src/types/
+        ├── evidence.ts                    # W3C PROV-O, bi-temporal cutoffs, and SHA-256 evidence bundles
+        ├── routing.ts                     # Gateway routing contracts & microservice endpoint schemas
+        ├── spatial.ts                     # 3D Cartesian coordinates, corridor polygons & tactical views
+        └── telemetry.ts                   # AIS, ADS-B, and anomaly report schemas
 ```
 
 ---
 
-## 📜 Architecture & Standards
+## 🚀 Key Capabilities
 
-* **Standards:** OGC SensorThings 1.1 · W3C PROV-O · PostGIS Topology
-* **Coordinate Basis:** WGS84 Ellipsoid · ECEF Cartesian3
-* **Time Synchronization:** UTC (GPS Synchronized)
-* **License:** MIT License · SpatialForge Spatial Operations
+* **TypeScript Enterprise Client:** Strict type safety across all evidence bundles, spatial coordinates, and telemetry vectors.
+* **Rust Cryptographic Enclave:** Sub-millisecond zero-allocation SHA-256 Merkle proofs and Ed25519 signature attestation.
+* **Go Core Gateway & Router:** Reverse-proxies `/api/v1/intelligence/` and `/api/v1/crawler/`, enforces constant-time HMAC security, and broadcasts real-time SSE streams to 3D Cesium.
+* **Military-Grade Stealth Crawler:** Rotates realistic TLS ClientHello profiles (Chrome 131, Firefox 133, Safari 18) with JA3/JA4 emulation, Gaussian jitter pacing, and proxy circuit-breakers for stealth OSINT collection.
+* **PostgreSQL + PostGIS:** Partitioned high-throughput spatial telemetry tables with GIST geometry indices, corridor crossing procedures, and bi-temporal historical tables.
+* **8 Unique Tactical Recon Perspectives:** Texas Capitol Nadir Recon (Austin, TX), Port of Antwerp Approach-A, SpaceX Pad 39A Launch Complex, Strait of Hormuz Chokepoint, Miraflores Locks, Great Bitter Lake Convoy Grid, Shinjuku Cyber Metropolis, and LEO Terminator.
+
+---
+
+## 🛠️ Master Makefile Orchestration
+
+```bash
+# Build all Go, Rust, and TypeScript binaries
+make build
+
+# Run all test suites across Go, Rust, Python, and Engine
+make test
+
+# Start local PostgreSQL (PostGIS) and Redis services via Docker
+make services-up
+
+# Initialize PostGIS schema, partitions, and stored procedures
+make db-init
+
+# Start the Go API Gateway and reverse-proxy router (:8080)
+make run-gateway
+
+# Launch the Military-Grade Stealth Scraping Engine
+make run-crawler
+
+# Launch the 3D Cesium Web UI (:4173)
+make run-client
+```
+
+---
+
+## 📄 License & Sovereignty
+
+Authored and maintained by **Frank Asante-Van Laarhoven**. Released under the MIT License.

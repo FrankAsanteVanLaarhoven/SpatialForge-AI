@@ -26,3 +26,4 @@ export interface IngestionRoutePacket {
   payloadJson: string;
   hmacSignature: string;
 }
+
