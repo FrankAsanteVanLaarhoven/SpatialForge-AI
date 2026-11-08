@@ -789,7 +789,7 @@ onUnmounted(() => {
           <!-- AI AUTONOMOUS SITREP ENGINE -->
           <div class="infra-card ai-sitrep-card">
             <div class="infra-card-header">
-              <span class="infra-title">🤖 AI AUTONOMOUS SITUATION BRIEFING</span>
+              <span class="infra-title"><span class="eng-icon-inline" v-html="SVG_ICONS.chip"></span> AI AUTONOMOUS SITUATION BRIEFING</span>
               <span class="infra-badge-count ai-badge">REAL-TIME INTEL</span>
             </div>
             <p class="infra-desc">Multi-model neural assessment synthesizing current coordinates, active Starlink LEO beams, mobile carrier mesh, and critical compute nodes.</p>
@@ -817,7 +817,7 @@ onUnmounted(() => {
           <!-- NATURAL LANGUAGE "FIND & FLY" SPATIAL ENGINE -->
           <div class="infra-card">
             <div class="infra-card-header">
-              <span class="infra-title">🎯 NATURAL LANGUAGE "FIND & FLY"</span>
+              <span class="infra-title"><span class="eng-icon-inline" v-html="SVG_ICONS.search"></span> NATURAL LANGUAGE "FIND & FLY"</span>
               <span class="infra-badge-count">SEMANTIC SEARCH</span>
             </div>
             <div class="infra-search-row">
@@ -859,7 +859,7 @@ onUnmounted(() => {
             <p class="infra-desc">Global AI compute clusters, colocation campuses (Equinix, Digital Realty, AWS, Google Cloud, Azure) with verified power draw.</p>
             <div class="infra-action-row">
               <button class="infra-toggle-btn" type="button" @click="toggleLayer('local-datacenters')">
-                📡 TOGGLE 4,300+ DATA CENTERS
+                <span class="eng-icon-inline" v-html="SVG_ICONS.antenna"></span> TOGGLE 4,300+ DATA CENTERS
               </button>
             </div>
             <div class="infra-sample-list">
@@ -886,10 +886,10 @@ onUnmounted(() => {
             <p class="infra-desc">Hydroelectric generating stations, satellite radiative heat (FIRMS MW), substations, and global subsea fiber cables.</p>
             <div class="infra-action-col">
               <button class="infra-toggle-btn energy" type="button" @click="toggleLayer('local-dams')">
-                🌊 TOGGLE DAMS & HYDRO PLANTS
+                <span class="eng-icon-inline" v-html="SVG_ICONS.power"></span> TOGGLE DAMS & HYDRO PLANTS
               </button>
               <button class="infra-toggle-btn cables" type="button" @click="toggleLayer('telegeography-submarine-cables')">
-                🌐 TOGGLE SUBSEA FIBER CABLES
+                <span class="eng-icon-inline" v-html="SVG_ICONS.laser"></span> TOGGLE SUBSEA FIBER CABLES
               </button>
             </div>
             <div class="infra-sample-list">
@@ -1033,7 +1033,7 @@ onUnmounted(() => {
                   </div>
 
                   <div class="route-center-vector">
-                    <span class="flight-vector-arrow">➔</span>
+                    <span class="flight-vector-arrow"><span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span></span>
                     <span class="duration-pill">{{ flt.totalFormatted }}</span>
                   </div>
 
@@ -1107,7 +1107,7 @@ onUnmounted(() => {
                   </div>
 
                   <div class="route-center-vector">
-                    <span class="flight-vector-arrow">➔</span>
+                    <span class="flight-vector-arrow"><span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span></span>
                     <span class="duration-pill sea">{{ ves.totalFormatted }}</span>
                   </div>
 
@@ -1539,7 +1539,7 @@ onUnmounted(() => {
             <!-- 3. TERRESTRIAL BOTTLENECKS VS SPECULATOR ILLUSION -->
             <div class="speculator-vs-reality-box">
               <div class="speculator-banner">
-                <div class="speculator-title">Order GPUs ➔ rake in cash?</div>
+                <div class="speculator-title">Order GPUs <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span> rake in cash?</div>
                 <div class="speculator-sub">WHAT SPECULATORS THINK · MUSK</div>
               </div>
 
@@ -1641,9 +1641,9 @@ onUnmounted(() => {
                   <div class="under-one-roof-badge">DESIGN · MAKE · TEST UNDER ONE ROOF</div>
                   <div class="fab-loop-cycle">
                     <div class="loop-step">DESIGN</div>
-                    <div class="loop-arrow">➔</div>
+                    <div class="loop-arrow"><span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span></div>
                     <div class="loop-step">MAKE</div>
-                    <div class="loop-arrow">➔</div>
+                    <div class="loop-arrow"><span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span></div>
                     <div class="loop-step">TEST</div>
                   </div>
                   <div class="fab-rapid-iteration-quote">
