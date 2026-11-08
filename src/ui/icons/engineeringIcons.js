@@ -194,6 +194,14 @@ export const SVG_ICONS = Object.freeze({
       <circle cx="11" cy="11" r="8" />
       <path d="m21 21-4.3-4.3" />
     </svg>
+  `,
+
+  // Live Camera / Optical Aperture
+  camera: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="eng-icon">
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+      <circle cx="12" cy="13" r="3" />
+    </svg>
   `
 });
 
@@ -203,3 +211,4 @@ export const SVG_ICONS = Object.freeze({
 export function getEngIcon(name) {
   return SVG_ICONS[name] || SVG_ICONS.chip;
 }
+

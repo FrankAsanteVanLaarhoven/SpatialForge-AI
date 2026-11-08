@@ -41,6 +41,16 @@ import {
   generateExecutiveReport,
   ingestUploadedReport,
 } from '../../../layers/starship/enterpriseDecisionEngine.js';
+import {
+  globalTracker,
+  GLOBAL_FLIGHT_FLEET,
+  GLOBAL_MARITIME_FLEET,
+} from '../../../layers/tracking/flightMaritimeTracker.js';
+import {
+  GLOBAL_CITYSCAPES,
+  flyToCityscape,
+} from '../../../layers/cityscapes/cityscapeRegistry.js';
+import { SUPER_INTELLIGENCE_SPEC } from '../../../layers/starship/superIntelligenceEngine.js';
 import { SVG_ICONS, getEngIcon } from '../../icons/engineeringIcons.js';
 
 const props = defineProps({
@@ -117,6 +127,114 @@ async function handleFileUpload(event) {
   }
 }
 
+// Global Tracker (Skyscanner Flight & MarineTraffic Vessel State)
+const trackerMode = ref('FLIGHTS'); // FLIGHTS or MARITIME
+const trackerSearchQuery = ref('');
+const activeFlights = ref(globalTracker.getAllFlights());
+const activeVessels = ref(globalTracker.getAllVessels());
+const selectedFlight = ref(GLOBAL_FLIGHT_FLEET[0]);
+const selectedVessel = ref(GLOBAL_MARITIME_FLEET[0]);
+let trackerUnsub = null;
+
+const filteredFlights = computed(() => {
+  if (!trackerSearchQuery.value) return activeFlights.value;
+  return globalTracker.searchFlights(trackerSearchQuery.value);
+});
+
+const filteredVessels = computed(() => {
+  if (!trackerSearchQuery.value) return activeVessels.value;
+  return globalTracker.searchVessels(trackerSearchQuery.value);
+});
+
+function flyToFlight(flight) {
+  selectedFlight.value = flight;
+  const viewer = window.viewer;
+  const Cesium = window.Cesium || window.cesium;
+  if (viewer?.camera && Cesium) {
+    viewer.camera.cancelFlight();
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(
+        flight.longitude,
+        flight.latitude,
+        (flight.altitudeFt || 35000) * 0.3048 + 3500
+      ),
+      orientation: {
+        heading: Cesium.Math.toRadians(flight.headingDeg || 0),
+        pitch: Cesium.Math.toRadians(-28),
+        roll: 0.0,
+      },
+      duration: 2.2,
+    });
+    window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'flights' } }));
+  }
+}
+
+function flyToVessel(vessel) {
+  selectedVessel.value = vessel;
+  const viewer = window.viewer;
+  const Cesium = window.Cesium || window.cesium;
+  if (viewer?.camera && Cesium) {
+    viewer.camera.cancelFlight();
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(vessel.longitude, vessel.latitude, 4500),
+      orientation: {
+        heading: Cesium.Math.toRadians(vessel.courseDeg || 0),
+        pitch: Cesium.Math.toRadians(-35),
+        roll: 0.0,
+      },
+      duration: 2.2,
+    });
+    window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'ais-live-vessels' } }));
+  }
+}
+
+// Global Cityscape Cameras & Views State
+const selectedCityId = ref('city-austin');
+const selectedCityModeIdx = ref(0);
+const activeCity = computed(
+  () => GLOBAL_CITYSCAPES.find((c) => c.id === selectedCityId.value) || GLOBAL_CITYSCAPES[0]
+);
+
+function handleSelectCity(cityId, modeIdx = 0) {
+  selectedCityId.value = cityId;
+  selectedCityModeIdx.value = modeIdx;
+  flyToCityscape(cityId, modeIdx);
+}
+
+function flyToAustinFab() {
+  const viewer = window.viewer;
+  const Cesium = window.Cesium || window.cesium;
+  if (viewer?.camera && Cesium) {
+    viewer.camera.cancelFlight();
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(-97.6171, 30.2223, 1400),
+      orientation: {
+        heading: Cesium.Math.toRadians(35),
+        pitch: Cesium.Math.toRadians(-32),
+        roll: 0.0,
+      },
+      duration: 2.2,
+    });
+  }
+}
+
+function flyToGrimesMegaFab() {
+  const viewer = window.viewer;
+  const Cesium = window.Cesium || window.cesium;
+  if (viewer?.camera && Cesium) {
+    viewer.camera.cancelFlight();
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(-95.98, 30.55, 3200),
+      orientation: {
+        heading: Cesium.Math.toRadians(190),
+        pitch: Cesium.Math.toRadians(-38),
+        roll: 0.0,
+      },
+      duration: 2.2,
+    });
+  }
+}
+
 onMounted(() => {
   fabUnsub = sovereignFabEngine.subscribe((updatedSummary) => {
     fabEngineSummary.value = updatedSummary;
@@ -124,10 +242,16 @@ onMounted(() => {
       selectedFabChip.value = updatedSummary.chipInventory[0];
     }
   });
+
+  trackerUnsub = globalTracker.subscribe((data) => {
+    activeFlights.value = data.flights;
+    activeVessels.value = data.vessels;
+  });
 });
 
 onUnmounted(() => {
   if (fabUnsub) fabUnsub();
+  if (trackerUnsub) trackerUnsub();
 });
 
 // Telemetry computed
@@ -510,6 +634,20 @@ onUnmounted(() => {
           </button>
           <button
             class="tab-btn"
+            :class="{ active: activeTab === 'radar' }"
+            @click="activeTab = 'radar'"
+          >
+            FLIGHT & SEA RADAR
+          </button>
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'cityscapes' }"
+            @click="activeTab = 'cityscapes'"
+          >
+            CITY CAMERAS
+          </button>
+          <button
+            class="tab-btn"
             :class="{ active: activeTab === 'media' }"
             @click="activeTab = 'media'"
           >
@@ -816,6 +954,279 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- TAB: FLIGHT & SEA RADAR (SKYSCANNER & MARINETRAFFIC STYLE) -->
+        <div v-if="activeTab === 'radar'" class="tab-content">
+          <div class="radar-hud-card">
+            <div class="radar-header-row">
+              <div class="radar-title">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.aviation"></span>
+                <span>GLOBAL FLIGHT & MARITIME TRACKER</span>
+              </div>
+              <span class="radar-live-badge">SKYSCANNER / AIS</span>
+            </div>
+            <p class="radar-desc">
+              Real-time civil aviation and maritime tracking with origin takeoff, destination arrival, flight/sea voyage elapsed & remaining duration, operator registries, and 3D vector camera targeting.
+            </p>
+
+            <!-- MODE SWITCHER -->
+            <div class="tracker-mode-switch">
+              <button
+                class="mode-switch-btn"
+                :class="{ active: trackerMode === 'FLIGHTS' }"
+                @click="trackerMode = 'FLIGHTS'"
+              >
+                <span class="eng-icon-inline" v-html="SVG_ICONS.aviation"></span>
+                FLIGHTS (SKYSCANNER)
+              </button>
+              <button
+                class="mode-switch-btn"
+                :class="{ active: trackerMode === 'MARITIME' }"
+                @click="trackerMode = 'MARITIME'"
+              >
+                <span class="eng-icon-inline" v-html="SVG_ICONS.maritime"></span>
+                MARITIME (AIS VESSELS)
+              </button>
+            </div>
+
+            <!-- SEARCH FILTER -->
+            <div class="tracker-search-wrap">
+              <span class="eng-icon-inline search-icon" v-html="SVG_ICONS.search"></span>
+              <input
+                v-model="trackerSearchQuery"
+                type="text"
+                class="tracker-search-input"
+                :placeholder="trackerMode === 'FLIGHTS' ? 'Search flight number, airline, origin, dest (e.g. DL189, JFK, Emirates)...' : 'Search vessel name, operator, MMSI, port (e.g. Maersk, Rotterdam)...'"
+              />
+              <button v-if="trackerSearchQuery" class="clear-search-btn" @click="trackerSearchQuery = ''">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.close"></span>
+              </button>
+            </div>
+
+            <!-- FLIGHTS LIST VIEW -->
+            <div v-if="trackerMode === 'FLIGHTS'" class="tracker-items-list">
+              <div
+                v-for="flt in filteredFlights"
+                :key="flt.id"
+                class="tracker-card flight-card"
+                :class="{ selected: selectedFlight?.id === flt.id }"
+                @click="selectedFlight = flt"
+              >
+                <div class="tracker-card-top">
+                  <div class="airline-brand-row">
+                    <span class="airline-code-badge">{{ flt.airlineIata }}</span>
+                    <span class="airline-name">{{ flt.airline }}</span>
+                    <span class="flight-callsign">{{ flt.flightNumber }} ({{ flt.callsign }})</span>
+                  </div>
+                  <span class="flight-phase-chip">{{ flt.phase }}</span>
+                </div>
+
+                <!-- ROUTE & TAKEOFF / ARRIVAL TIMES -->
+                <div class="route-airports-grid">
+                  <div class="airport-col origin">
+                    <div class="airport-code">{{ flt.origin.code }}</div>
+                    <div class="airport-city">{{ flt.origin.city }}</div>
+                    <div class="flight-time-line">
+                      <span class="time-lbl">TAKEOFF:</span>
+                      <strong class="time-val">{{ flt.origin.actualTakeoff }}</strong>
+                    </div>
+                    <div class="sched-sub">Sched {{ flt.origin.scheduledTakeoff }}</div>
+                  </div>
+
+                  <div class="route-center-vector">
+                    <span class="flight-vector-arrow">➔</span>
+                    <span class="duration-pill">{{ flt.totalFormatted }}</span>
+                  </div>
+
+                  <div class="airport-col destination">
+                    <div class="airport-code">{{ flt.destination.code }}</div>
+                    <div class="airport-city">{{ flt.destination.city }}</div>
+                    <div class="flight-time-line">
+                      <span class="time-lbl">EST. ARRIVAL:</span>
+                      <strong class="time-val highlight-green">{{ flt.destination.estimatedArrival }}</strong>
+                    </div>
+                    <div class="sched-sub">Sched {{ flt.destination.scheduledArrival }}</div>
+                  </div>
+                </div>
+
+                <!-- PROGRESS BAR & DURATION BREAKDOWN -->
+                <div class="duration-progress-bar-wrap">
+                  <div class="duration-labels-row">
+                    <span>Elapsed: <strong>{{ flt.elapsedFormatted }}</strong></span>
+                    <span class="pct-badge">{{ flt.progressPct }}% COMPLETE</span>
+                    <span>Remaining: <strong>{{ flt.remainingFormatted }}</strong></span>
+                  </div>
+                  <div class="flight-progress-track">
+                    <div class="flight-progress-fill" :style="{ width: flt.progressPct + '%' }"></div>
+                  </div>
+                </div>
+
+                <!-- METRICS & 3D CAMERA ACTION -->
+                <div class="tracker-metrics-action-row">
+                  <div class="telemetry-chips">
+                    <span class="chip-metric">ALT <strong>{{ flt.altitudeFt.toLocaleString() }} FT</strong></span>
+                    <span class="chip-metric">SPD <strong>{{ flt.groundSpeedKts }} KTS</strong></span>
+                    <span class="chip-metric">HDG <strong>{{ flt.headingDeg }}°</strong></span>
+                    <span class="chip-metric model-txt">{{ flt.aircraft }}</span>
+                  </div>
+                  <button class="fly-vector-btn" type="button" @click.stop="flyToFlight(flt)">
+                    FLY TO 3D <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- MARITIME LIST VIEW -->
+            <div v-if="trackerMode === 'MARITIME'" class="tracker-items-list">
+              <div
+                v-for="ves in filteredVessels"
+                :key="ves.id"
+                class="tracker-card vessel-card"
+                :class="{ selected: selectedVessel?.id === ves.id }"
+                @click="selectedVessel = ves"
+              >
+                <div class="tracker-card-top">
+                  <div class="airline-brand-row">
+                    <span class="operator-code-badge">{{ ves.operatorCode }}</span>
+                    <span class="airline-name">{{ ves.operator }}</span>
+                    <span class="vessel-imo">IMO {{ ves.imo }}</span>
+                  </div>
+                  <span class="vessel-status-chip">{{ ves.status }}</span>
+                </div>
+
+                <h4 class="vessel-full-name">{{ ves.vesselName }}</h4>
+
+                <!-- ROUTE & PORT ETAS -->
+                <div class="route-airports-grid maritime-ports">
+                  <div class="airport-col origin">
+                    <div class="port-code">{{ ves.originPort.code }}</div>
+                    <div class="airport-city">{{ ves.originPort.name }}</div>
+                    <div class="flight-time-line">
+                      <span class="time-lbl">DEPARTED:</span>
+                      <strong class="time-val">{{ ves.originPort.departureDate }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="route-center-vector">
+                    <span class="flight-vector-arrow">➔</span>
+                    <span class="duration-pill sea">{{ ves.totalFormatted }}</span>
+                  </div>
+
+                  <div class="airport-col destination">
+                    <div class="port-code">{{ ves.destPort.code }}</div>
+                    <div class="airport-city">{{ ves.destPort.name }}</div>
+                    <div class="flight-time-line">
+                      <span class="time-lbl">ETA PORT:</span>
+                      <strong class="time-val highlight-green">{{ ves.destPort.eta }}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- VOYAGE PROGRESS -->
+                <div class="duration-progress-bar-wrap">
+                  <div class="duration-labels-row">
+                    <span>At Sea: <strong>{{ ves.elapsedFormatted }}</strong></span>
+                    <span class="pct-badge sea">{{ ves.progressPct }}% OF PASSAGE</span>
+                    <span>Remaining: <strong>{{ ves.remainingFormatted }}</strong></span>
+                  </div>
+                  <div class="flight-progress-track sea">
+                    <div class="flight-progress-fill sea" :style="{ width: ves.progressPct + '%' }"></div>
+                  </div>
+                </div>
+
+                <!-- METRICS & 3D CAMERA ACTION -->
+                <div class="tracker-metrics-action-row">
+                  <div class="telemetry-chips">
+                    <span class="chip-metric">SPD <strong>{{ ves.speedKts }} KTS</strong></span>
+                    <span class="chip-metric">DRAUGHT <strong>{{ ves.draughtM }}M</strong></span>
+                    <span class="chip-metric">CAP <strong>{{ ves.capacity }}</strong></span>
+                    <span class="chip-metric model-txt">{{ ves.vesselType }}</span>
+                  </div>
+                  <button class="fly-vector-btn sea" type="button" @click.stop="flyToVessel(ves)">
+                    FLY TO 3D <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: CITYSCAPE CAMERA VIEWS & URBAN RECON -->
+        <div v-if="activeTab === 'cityscapes'" class="tab-content">
+          <div class="cityscapes-hud-card">
+            <div class="cityscapes-header-row">
+              <div class="cityscapes-title">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.camera"></span>
+                <span>GLOBAL CITYSCAPE CAMERAS & 3D RECON</span>
+              </div>
+              <span class="live-rec-badge"><span class="rec-dot"></span> LIVE CCTV</span>
+            </div>
+            <p class="cityscapes-desc">
+              High-resolution street-level viewpoints, architectural nadir surveillance, and panoramic 3D camera vantage points across major global technology corridors and metropolises.
+            </p>
+
+            <!-- SELECTED CITY LIVE STREAM / PREVIEW -->
+            <div class="city-live-viewfinder">
+              <div class="viewfinder-overlay">
+                <div class="viewfinder-top">
+                  <span class="cam-id-tag">CAM-{{ activeCity.id.toUpperCase() }}</span>
+                  <span class="cam-elevation">{{ activeCity.elevation }}</span>
+                </div>
+                <div class="viewfinder-crosshairs"></div>
+                <div class="viewfinder-bottom">
+                  <span class="city-name-tag">{{ activeCity.name }} ({{ activeCity.city }})</span>
+                  <span class="weather-tag">{{ activeCity.weather }}</span>
+                </div>
+              </div>
+              <div class="viewfinder-feed-sim">
+                <div class="scanlines"></div>
+                <div class="feed-ambient-glitch">
+                  <div class="city-feed-watermark">{{ activeCity.tag }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CAMERA ANGLE SELECTORS FOR ACTIVE CITY -->
+            <div class="city-cam-modes-row">
+              <span class="cam-mode-lbl">CAMERA ANGLE:</span>
+              <div class="cam-modes-btns">
+                <button
+                  v-for="(mode, mIdx) in activeCity.cameraModes"
+                  :key="mIdx"
+                  class="cam-angle-btn"
+                  :class="{ active: selectedCityModeIdx === mIdx }"
+                  @click="handleSelectCity(activeCity.id, mIdx)"
+                >
+                  {{ mode.name }} ({{ mode.alt }}m)
+                </button>
+              </div>
+            </div>
+
+            <!-- CITY GRID SELECTOR -->
+            <div class="city-selector-grid">
+              <div
+                v-for="city in GLOBAL_CITYSCAPES"
+                :key="city.id"
+                class="city-tile-card"
+                :class="{ active: selectedCityId === city.id }"
+                @click="handleSelectCity(city.id, 0)"
+              >
+                <div class="city-tile-top">
+                  <span class="city-tile-name">{{ city.city }}</span>
+                  <span class="city-tile-country">{{ city.country }}</span>
+                </div>
+                <div class="city-tile-tag">{{ city.tag }}</div>
+                <div class="city-tile-desc">{{ city.description }}</div>
+                <div class="city-tile-footer">
+                  <span class="pop-lbl">Pop: {{ city.population }}</span>
+                  <span class="fly-city-chip">
+                    FLY 3D <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- TAB 4: REVERSE-ENGINEERED SOVEREIGN FAB & BIZ COORDINATION FABRIC -->
         <div v-if="activeTab === 'biz'" class="tab-content">
           <!-- NAVIGATION SUB-HEADER PILLS -->
@@ -827,6 +1238,14 @@ onUnmounted(() => {
             >
               <span class="eng-icon-inline" v-html="SVG_ICONS.metrics"></span>
               DECISION ENGINE & REPORTS
+            </button>
+            <button
+              class="biz-subnav-btn highlight-super-intel"
+              :class="{ active: selectedBizSubSection === 'SUPER_INTEL' }"
+              @click="selectedBizSubSection = 'SUPER_INTEL'"
+            >
+              <span class="eng-icon-inline" v-html="SVG_ICONS.power"></span>
+              SUPER INTEL (100GW+)
             </button>
             <button
               class="biz-subnav-btn"
@@ -1012,6 +1431,246 @@ onUnmounted(() => {
               <div class="redis-stat">
                 <small>HIT RATIO</small>
                 <strong class="green-text">{{ redisCacheStatus.hitRatioPct }}%</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-SECTION: DIGITAL SUPER INTELLIGENCE & 100GW+ ORBITAL COMPUTE -->
+          <div v-if="selectedBizSubSection === 'SUPER_INTEL'" class="biz-card super-intel-card">
+            <div class="biz-card-header">
+              <span class="biz-logo">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.power"></span>
+                DIGITAL SUPER INTELLIGENCE & ORBITAL COMPUTE
+              </span>
+              <span class="biz-badge-special gold">100GW+ SCALE</span>
+            </div>
+            <p class="biz-desc">
+              Why we need unprecedented energy and why super intelligence must expand to space: Singlet requests decompose into thousands of concurrent physics/engineering workloads, surpassing terrestrial electricity and cooling limits.
+            </p>
+
+            <!-- 1. ELON MUSK NOV 6, 2026 DOCTRINE -->
+            <div class="musk-doctrine-banner">
+              <div class="quote-card primary">
+                <div class="quote-text">
+                  "...the only way to be competitive with China is to take the intelligence to space."
+                </div>
+                <div class="quote-meta">ELON MUSK · NOV 6, 2026</div>
+              </div>
+
+              <div class="quote-pair-row">
+                <div class="quote-subcard">
+                  <div class="sub-quote-metric">A few hundred GW a year</div>
+                  <div class="sub-quote-label">GLOBAL ORBITAL COMPUTE POWER TARGET · MUSK</div>
+                </div>
+                <div class="quote-subcard">
+                  <div class="sub-quote-metric">> $100B → > $500B ARR</div>
+                  <div class="sub-quote-label">DEC 2026: >$100B · DEC 2027: >$500B RECURRING</div>
+                </div>
+              </div>
+
+              <div class="quote-caveat">
+                "...this is not a promise, this is what I think will happen, this is my best guess."
+                <span class="caveat-author">— MUSK · NOV 6, 2026</span>
+              </div>
+            </div>
+
+            <!-- 2. TASK DECOMPOSITION: 1 REQUEST -> 1,642 COMPUTING TASKS -->
+            <div class="task-decomposition-panel">
+              <div class="decomp-header">
+                <span class="decomp-badge">WORKLOAD EXPLOSION</span>
+                <h4>ONE REQUEST: DESIGN A BUILDING</h4>
+                <span class="decomp-total">1,642 COMPUTING TASKS</span>
+              </div>
+              <p class="decomp-sub">
+                A single enterprise prompt triggers an exponential cascade of multi-domain physics simulations, structural finite element analyses, and real-time market optimizations:
+              </p>
+
+              <div class="decomp-columns-grid">
+                <div class="decomp-col">
+                  <div class="decomp-col-header">
+                    <span class="cat-name">MATERIALS</span>
+                    <span class="task-count">480 Tasks</span>
+                  </div>
+                  <div class="workload-indicators">
+                    <div v-for="i in 12" :key="'mat-'+i" class="w-block active"></div>
+                  </div>
+                  <ul class="decomp-tasks-list">
+                    <li>Carbon-negative curing kinetics</li>
+                    <li>Alloy thermal expansion & yield stress</li>
+                    <li>Polymer UV facade degradation</li>
+                    <li>Embodied carbon LCA balance</li>
+                  </ul>
+                </div>
+
+                <div class="decomp-col">
+                  <div class="decomp-col-header">
+                    <span class="cat-name">STRUCTURE</span>
+                    <span class="task-count">720 Tasks</span>
+                  </div>
+                  <div class="workload-indicators">
+                    <div v-for="i in 12" :key="'str-'+i" class="w-block active"></div>
+                  </div>
+                  <ul class="decomp-tasks-list">
+                    <li>Richter 8.5 seismic dynamic response</li>
+                    <li>CFD aerodynamic vortex shedding</li>
+                    <li>Sub-millimeter beam deflection FEA</li>
+                    <li>Bedrock foundation shear resistance</li>
+                  </ul>
+                </div>
+
+                <div class="decomp-col">
+                  <div class="decomp-col-header">
+                    <span class="cat-name">COST & SUPPLY</span>
+                    <span class="task-count">442 Tasks</span>
+                  </div>
+                  <div class="workload-indicators">
+                    <div v-for="i in 12" :key="'cst-'+i" class="w-block active"></div>
+                  </div>
+                  <ul class="decomp-tasks-list">
+                    <li>Global spot steel & copper pricing</li>
+                    <li>Multimodal shipping route lead times</li>
+                    <li>Robotic crane sequence kinematics</li>
+                    <li>50-year net-zero energy cash flows</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. TERRESTRIAL BOTTLENECKS VS SPECULATOR ILLUSION -->
+            <div class="speculator-vs-reality-box">
+              <div class="speculator-banner">
+                <div class="speculator-title">Order GPUs ➔ rake in cash?</div>
+                <div class="speculator-sub">WHAT SPECULATORS THINK · MUSK</div>
+              </div>
+
+              <div class="bottleneck-explanation">
+                <div class="bottleneck-headline">One delay holds up the whole project</div>
+                <div class="bottlenecks-triad">
+                  <div class="bottleneck-item">
+                    <div class="b-icon-line">
+                      <span class="eng-icon-inline" v-html="SVG_ICONS.power"></span>
+                      <strong>ELECTRICITY</strong>
+                    </div>
+                    <p>5-7 year utility queue for 500MW+ substation interconnects. Local grids cannot handle simultaneous hyperclusters.</p>
+                  </div>
+                  <div class="bottleneck-item">
+                    <div class="b-icon-line">
+                      <span class="eng-icon-inline" v-html="SVG_ICONS.cleanroom"></span>
+                      <strong>COOLING</strong>
+                    </div>
+                    <p>Billions of gallons of water consumed; severe regulatory moratoriums on municipal data center cooling permits.</p>
+                  </div>
+                  <div class="bottleneck-item">
+                    <div class="b-icon-line">
+                      <span class="eng-icon-inline" v-html="SVG_ICONS.laser"></span>
+                      <strong>FAST CONNECTIONS</strong>
+                    </div>
+                    <p>Subsea fiber cuts, optical repeater latency, and physical terrestrial rights-of-way bottlenecks.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. CONCEPT: ORBITAL COMPUTER (JUL-SEP 2027) -->
+            <div class="orbital-computer-deepdive">
+              <div class="orbital-concept-header">
+                <div class="milestone-badge">Jul–Sep 2027</div>
+                <div class="concept-title">CONCEPT · ORBITAL COMPUTER (Q3 OF NEXT YEAR)</div>
+              </div>
+
+              <div class="orbital-diagram-wrap">
+                <div class="orbital-sat-wireframe">
+                  <div class="sat-wing left"></div>
+                  <div class="sat-core-box">
+                    <div class="die-grid">
+                      <div class="tpu-cell"></div><div class="tpu-cell"></div><div class="tpu-cell"></div>
+                      <div class="tpu-cell"></div><div class="tpu-cell"></div><div class="tpu-cell"></div>
+                    </div>
+                  </div>
+                  <div class="sat-wing right"></div>
+                  <div class="sat-radiator-fins">
+                    <div class="fin"></div><div class="fin"></div><div class="fin"></div><div class="fin"></div>
+                  </div>
+                </div>
+
+                <div class="orbital-advantages-list">
+                  <div class="adv-item">
+                    <span class="adv-tag">SOLAR FLUX</span>
+                    <strong>Long stretches of sunlight:</strong> 1,361 W/m² continuous unattenuated solar radiation in sun-synchronous orbit with 100% uptime and zero weather loss.
+                  </div>
+                  <div class="adv-item">
+                    <span class="adv-tag">VACUUM RADIATORS</span>
+                    <strong>No air: radiators release the heat into space</strong> via Stefan-Boltzmann radiative cooling (P = ε σ A T⁴) directly into 2.7K vacuum. Consumes zero water.
+                  </div>
+                  <div class="adv-item">
+                    <span class="adv-tag">STARSHIP LAUNCH</span>
+                    <strong>Megawatt launch cadence:</strong> Starship payload volume and sub-$100/kg cost unlocks deploying hundreds of gigawatts in orbit.
+                  </div>
+                </div>
+              </div>
+
+              <div class="in-orbit-tests-checklist">
+                <div class="tests-header">TESTS IN ORBIT:</div>
+                <div class="tests-items">
+                  <div class="test-check-item">
+                    <span class="eng-icon-inline check" v-html="SVG_ICONS.check"></span>
+                    <span>Useful work (Tensor Compute Delivered)</span>
+                  </div>
+                  <div class="test-check-item">
+                    <span class="eng-icon-inline check" v-html="SVG_ICONS.check"></span>
+                    <span>Power drawn (Continuous Solar Bus)</span>
+                  </div>
+                  <div class="test-check-item">
+                    <span class="eng-icon-inline check" v-html="SVG_ICONS.check"></span>
+                    <span>Heat released (Vacuum Thermal Radiator Balance)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. TEXAS SEMICONDUCTOR CORRIDOR ("UNDER ONE ROOF") -->
+            <div class="texas-fab-corridor-box">
+              <div class="corridor-header">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.chip"></span>
+                <h4>TEXAS SEMICONDUCTOR CORRIDOR · MUSK PLANS</h4>
+              </div>
+
+              <div class="fabs-comparison-grid">
+                <div class="fab-detail-card austin">
+                  <div class="fab-badge green">AUSTIN · RESEARCH FAB</div>
+                  <div class="under-one-roof-badge">DESIGN · MAKE · TEST UNDER ONE ROOF</div>
+                  <div class="fab-loop-cycle">
+                    <div class="loop-step">DESIGN</div>
+                    <div class="loop-arrow">➔</div>
+                    <div class="loop-step">MAKE</div>
+                    <div class="loop-arrow">➔</div>
+                    <div class="loop-step">TEST</div>
+                  </div>
+                  <div class="fab-rapid-iteration-quote">
+                    "First chip runs too hot? Next version back sooner: test, try again."
+                  </div>
+                  <p class="fab-desc">
+                    Eliminates traditional 6-month outsourced foundry turnarounds by co-locating silicon architecture, EUV photolithography, and wafer testing under a single roof.
+                  </p>
+                  <button class="fly-fab-btn" type="button" @click="flyToAustinFab()">
+                    FLY TO AUSTIN FAB (30.22° N, 97.61° W) <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span>
+                  </button>
+                </div>
+
+                <div class="fab-detail-card grimes">
+                  <div class="fab-badge white">GRIMES COUNTY · PLANNED PRODUCTION</div>
+                  <div class="under-one-roof-badge mass">MASS SILICON PRODUCTION</div>
+                  <div class="production-stats-row">
+                    <div>OUTPUT: <strong>300mm Wafers</strong></div>
+                    <div>ROLE: <strong>Starlink Gen-3 & Orbital AI</strong></div>
+                  </div>
+                  <p class="fab-desc">
+                    Gigascale mass wafer manufacturing connected via Texas high-speed logistics to Starbase Boca Chica for immediate orbital rocket integration.
+                  </p>
+                  <button class="fly-fab-btn" type="button" @click="flyToGrimesMegaFab()">
+                    FLY TO GRIMES COUNTY MEGAFAB <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -3662,6 +4321,1080 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Super Intelligence & Orbital Compute Styling */
+.biz-subnav-btn.highlight-super-intel {
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.4);
+}
+
+.biz-subnav-btn.highlight-super-intel.active {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #c084fc;
+  color: #f3e8ff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+}
+
+.super-intel-card {
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
+.musk-doctrine-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.quote-card.primary {
+  background: rgba(15, 23, 42, 0.85);
+  border-left: 3px solid #a855f7;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.quote-text {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.35;
+  margin-bottom: 0.2rem;
+}
+
+.quote-meta {
+  font-size: 0.46rem;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.quote-pair-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.quote-subcard {
+  flex: 1;
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+}
+
+.sub-quote-metric {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #a3e635;
+  letter-spacing: 0.02em;
+}
+
+.sub-quote-label {
+  font-size: 0.44rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.quote-caveat {
+  font-size: 0.5rem;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 0.2rem 0.4rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+}
+
+.caveat-author {
+  font-weight: 700;
+  font-style: normal;
+  color: #cbd5e1;
+  margin-left: 0.25rem;
+}
+
+/* Task Decomposition */
+.task-decomposition-panel {
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.decomp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+.decomp-badge {
+  font-size: 0.44rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+.decomp-header h4 {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.decomp-total {
+  font-size: 0.56rem;
+  font-weight: 800;
+  color: #a3e635;
+}
+
+.decomp-sub {
+  font-size: 0.48rem;
+  color: #94a3b8;
+  margin: 0 0 0.4rem 0;
+  line-height: 1.3;
+}
+
+.decomp-columns-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+.decomp-col {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  padding: 0.35rem;
+}
+
+.decomp-col-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.cat-name {
+  font-size: 0.48rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.task-count {
+  font-size: 0.46rem;
+  color: #a3e635;
+  font-weight: 700;
+}
+
+.workload-indicators {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  margin-bottom: 0.3rem;
+}
+
+.w-block.active {
+  height: 3px;
+  background: #a3e635;
+  border-radius: 1px;
+}
+
+.decomp-tasks-list {
+  margin: 0;
+  padding-left: 0.75rem;
+  font-size: 0.44rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+/* Speculator vs Reality */
+.speculator-vs-reality-box {
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.speculator-banner {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #ef4444;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0 3px 3px 0;
+  margin-bottom: 0.4rem;
+}
+
+.speculator-title {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #fca5a5;
+}
+
+.speculator-sub {
+  font-size: 0.44rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.bottleneck-headline {
+  font-size: 0.54rem;
+  font-weight: 800;
+  color: #fef08a;
+  margin-bottom: 0.35rem;
+}
+
+.bottlenecks-triad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+.bottleneck-item {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  padding: 0.35rem;
+}
+
+.b-icon-line {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.48rem;
+  color: #f87171;
+  font-weight: 800;
+  margin-bottom: 0.2rem;
+}
+
+.bottleneck-item p {
+  margin: 0;
+  font-size: 0.44rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+/* Orbital Computer Concept */
+.orbital-computer-deepdive {
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.orbital-concept-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.milestone-badge {
+  background: rgba(163, 230, 53, 0.15);
+  border: 1px solid #a3e635;
+  color: #a3e635;
+  font-size: 0.48rem;
+  font-weight: 800;
+  padding: 0.15rem 0.35rem;
+  border-radius: 2px;
+}
+
+.concept-title {
+  font-size: 0.54rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.orbital-diagram-wrap {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.orbital-sat-wireframe {
+  width: 90px;
+  height: 60px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sat-wing {
+  width: 24px;
+  height: 38px;
+  border: 1px solid #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 1px;
+}
+
+.sat-core-box {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #a3e635;
+  background: rgba(15, 23, 42, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.die-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.tpu-cell {
+  width: 5px;
+  height: 5px;
+  background: #a3e635;
+}
+
+.sat-radiator-fins {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+}
+
+.sat-radiator-fins .fin {
+  width: 1px;
+  height: 12px;
+  background: #f8fafc;
+  opacity: 0.6;
+}
+
+.orbital-advantages-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.adv-item {
+  font-size: 0.46rem;
+  color: #cbd5e1;
+  line-height: 1.3;
+}
+
+.adv-tag {
+  font-size: 0.42rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 0.05rem 0.2rem;
+  border-radius: 2px;
+  margin-right: 0.2rem;
+}
+
+.in-orbit-tests-checklist {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  padding: 0.35rem 0.5rem;
+}
+
+.tests-header {
+  font-size: 0.48rem;
+  font-weight: 800;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.tests-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.test-check-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.48rem;
+  color: #f1f5f9;
+}
+
+.eng-icon-inline.check {
+  color: #a3e635;
+}
+
+/* Texas Semiconductor Corridor */
+.texas-fab-corridor-box {
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.corridor-header {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.54rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 0.4rem;
+}
+
+.fabs-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.fab-detail-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.fab-badge {
+  font-size: 0.48rem;
+  font-weight: 800;
+  margin-bottom: 0.2rem;
+}
+
+.fab-badge.green {
+  color: #a3e635;
+}
+
+.fab-badge.white {
+  color: #f8fafc;
+}
+
+.under-one-roof-badge {
+  font-size: 0.42rem;
+  color: #38bdf8;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 0.1rem 0.25rem;
+  border-radius: 2px;
+  margin-bottom: 0.3rem;
+}
+
+.fab-loop-cycle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.48rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 0.25rem;
+}
+
+.fab-rapid-iteration-quote {
+  font-size: 0.46rem;
+  color: #fef08a;
+  font-style: italic;
+  margin-bottom: 0.3rem;
+  line-height: 1.3;
+}
+
+.fab-desc {
+  font-size: 0.44rem;
+  color: #94a3b8;
+  line-height: 1.3;
+  margin: 0 0 0.4rem 0;
+  flex: 1;
+}
+
+.fly-fab-btn {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #a3e635;
+  font-size: 0.46rem;
+  font-weight: 700;
+  padding: 0.25rem 0.4rem;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  transition: all 0.2s ease;
+}
+
+.fly-fab-btn:hover {
+  background: rgba(34, 197, 94, 0.25);
+  color: #f8fafc;
+}
+
+/* Radar (Skyscanner & Maritime) Styling */
+.radar-hud-card, .cityscapes-hud-card {
+  background: rgba(10, 15, 29, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  padding: 0.6rem;
+}
+
+.radar-header-row, .cityscapes-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.radar-title, .cityscapes-title {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.radar-live-badge {
+  font-size: 0.44rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+.radar-desc, .cityscapes-desc {
+  font-size: 0.48rem;
+  color: #94a3b8;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.35;
+}
+
+.tracker-mode-switch {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+
+.mode-switch-btn {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 0.5rem;
+  font-weight: 700;
+  padding: 0.3rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.mode-switch-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.tracker-search-wrap {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.tracker-search-wrap .search-icon {
+  position: absolute;
+  left: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  width: 12px;
+  height: 12px;
+}
+
+.tracker-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  padding: 0.35rem 1.6rem 0.35rem 1.4rem;
+  color: #f8fafc;
+  font-size: 0.5rem;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.tracker-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.tracker-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.45rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tracker-card:hover {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.tracker-card.selected {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.tracker-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.airline-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.airline-code-badge, .operator-code-badge {
+  font-size: 0.44rem;
+  font-weight: 800;
+  background: #38bdf8;
+  color: #020617;
+  padding: 0.08rem 0.25rem;
+  border-radius: 2px;
+}
+
+.operator-code-badge {
+  background: #34d399;
+}
+
+.airline-name {
+  font-size: 0.52rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.flight-callsign, .vessel-imo {
+  font-size: 0.46rem;
+  color: #94a3b8;
+}
+
+.vessel-full-name {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 0.3rem 0;
+}
+
+.flight-phase-chip, .vessel-status-chip {
+  font-size: 0.42rem;
+  font-weight: 800;
+  color: #a3e635;
+  background: rgba(163, 230, 53, 0.12);
+  padding: 0.08rem 0.25rem;
+  border-radius: 2px;
+}
+
+.route-airports-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.35rem;
+}
+
+.airport-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.airport-code, .port-code {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.airport-city {
+  font-size: 0.44rem;
+  color: #94a3b8;
+  margin-bottom: 0.15rem;
+}
+
+.flight-time-line {
+  font-size: 0.46rem;
+  color: #cbd5e1;
+}
+
+.time-lbl {
+  color: #64748b;
+  font-size: 0.42rem;
+  margin-right: 0.15rem;
+}
+
+.time-val.highlight-green {
+  color: #a3e635;
+}
+
+.sched-sub {
+  font-size: 0.4rem;
+  color: #64748b;
+}
+
+.route-center-vector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.flight-vector-arrow {
+  color: #38bdf8;
+  font-size: 0.75rem;
+}
+
+.duration-pill {
+  font-size: 0.44rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.06rem 0.25rem;
+  border-radius: 2px;
+}
+
+.duration-pill.sea {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.duration-progress-bar-wrap {
+  margin-bottom: 0.35rem;
+}
+
+.duration-labels-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.44rem;
+  color: #94a3b8;
+  margin-bottom: 0.15rem;
+}
+
+.pct-badge {
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.pct-badge.sea {
+  color: #34d399;
+}
+
+.flight-progress-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.flight-progress-fill {
+  height: 100%;
+  background: #38bdf8;
+}
+
+.flight-progress-fill.sea {
+  background: #34d399;
+}
+
+.tracker-metrics-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+
+.telemetry-chips {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.chip-metric {
+  font-size: 0.42rem;
+  color: #94a3b8;
+  background: rgba(2, 6, 23, 0.8);
+  padding: 0.08rem 0.25rem;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.chip-metric strong {
+  color: #f1f5f9;
+}
+
+.chip-metric.model-txt {
+  color: #38bdf8;
+}
+
+.fly-vector-btn {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-size: 0.46rem;
+  font-weight: 700;
+  padding: 0.2rem 0.4rem;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.fly-vector-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #f8fafc;
+}
+
+.fly-vector-btn.sea {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.4);
+  color: #34d399;
+}
+
+.fly-vector-btn.sea:hover {
+  background: rgba(52, 211, 153, 0.25);
+  color: #f8fafc;
+}
+
+/* Cityscapes & Cameras Styling */
+.live-rec-badge {
+  font-size: 0.44rem;
+  font-weight: 800;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rec-dot {
+  width: 5px;
+  height: 5px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: blink 1s infinite alternate;
+}
+
+@keyframes blink {
+  0% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+
+.city-live-viewfinder {
+  height: 110px;
+  background: rgba(2, 6, 23, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.viewfinder-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 3;
+}
+
+.viewfinder-top, .viewfinder-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.46rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.weather-tag {
+  color: #a3e635;
+}
+
+.viewfinder-crosshairs {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+  border-radius: 50%;
+}
+
+.viewfinder-feed-sim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(14, 165, 233, 0.15) 0%, rgba(2, 6, 23, 0.95) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+.city-feed-watermark {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.15);
+  letter-spacing: 0.1em;
+}
+
+.city-cam-modes-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.cam-mode-lbl {
+  font-size: 0.46rem;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.cam-modes-btns {
+  display: flex;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.cam-angle-btn {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 0.44rem;
+  font-weight: 700;
+  padding: 0.25rem 0.35rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cam-angle-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.city-selector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.city-tile-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  padding: 0.35rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.city-tile-card:hover {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.city-tile-card.active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.city-tile-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.15rem;
+}
+
+.city-tile-name {
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.city-tile-country {
+  font-size: 0.42rem;
+  color: #94a3b8;
+}
+
+.city-tile-tag {
+  font-size: 0.4rem;
+  color: #38bdf8;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.city-tile-desc {
+  font-size: 0.42rem;
+  color: #cbd5e1;
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+}
+
+.city-tile-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pop-lbl {
+  font-size: 0.4rem;
+  color: #64748b;
+}
+
+.fly-city-chip {
+  font-size: 0.42rem;
+  font-weight: 700;
+  color: #a3e635;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
 }
 
 </style>
