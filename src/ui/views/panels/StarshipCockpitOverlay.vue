@@ -24,6 +24,12 @@ import {
   CRITICAL_INFRASTRUCTURE_REGISTRY,
   flyToTarget,
 } from '../../../agent/geoAiExecutive.js';
+import {
+  STARLINK_BUSINESS_PLANS,
+  TERRAFAB_NETWORK_NODES,
+  FUTURE_OUTLOOK_PHASES,
+  calculateBusinessArbitrage,
+} from '../../../layers/starship/terraFabBusinessIntelligence.js';
 
 const props = defineProps({
   visible: { type: Boolean, default: true },
@@ -39,7 +45,13 @@ const missionTimeS = ref(-5);
 const isPlaying = ref(true);
 const playbackSpeed = ref(1.0);
 const selectedCamMode = ref('AUTO_DIRECTOR');
-const activeTab = ref('telemetry'); // telemetry, starlink, media
+const activeTab = ref('telemetry'); // telemetry, infra, media, biz
+
+// Business & TerraFab Intelligence State
+const selectedBizPlan = ref(STARLINK_BUSINESS_PLANS[0]);
+const selectedOutlookPhase = ref(FUTURE_OUTLOOK_PHASES[0]);
+const selectedArbitrageScenario = ref('HFT_FINANCE');
+const bizArbitrage = computed(() => calculateBusinessArbitrage(selectedArbitrageScenario.value));
 
 // Telemetry computed
 const telemetry = computed(() => calculateStarshipTelemetry(missionTimeS.value));
@@ -426,6 +438,13 @@ onUnmounted(() => {
           >
             LIVE MEDIA
           </button>
+          <button
+            class="tab-btn highlight-biz-tab"
+            :class="{ active: activeTab === 'biz' }"
+            @click="activeTab = 'biz'"
+          >
+            TERRAFAB & BIZ
+          </button>
         </div>
 
         <!-- TAB 1: STARLINK & MOBILE CARRIER RADAR -->
@@ -715,6 +734,160 @@ onUnmounted(() => {
                 <button class="launch-stream-btn" type="button" @click.stop="openMedia(media.url)">
                   LAUNCH FEED ↗
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: TERRAFAB, MACROFAB & BIZ INTELLIGENCE CONSOLE -->
+        <div v-if="activeTab === 'biz'" class="tab-content">
+          <!-- 1. TERRAFAB & MACROFAB SILICON CLOUD NETWORK -->
+          <div class="biz-card">
+            <div class="biz-card-header">
+              <span class="biz-logo">⚡ TERRAFAB & MACROFAB CLOUD</span>
+              <span class="biz-badge-special">AWS IN SPACE</span>
+            </div>
+            <p class="biz-desc">
+              Vertically integrated silicon foundries, orbital servers, and gigawatt power grids bypassing legacy cloud hyperscalers.
+            </p>
+
+            <div class="terrafab-nodes-list">
+              <div
+                v-for="node in TERRAFAB_NETWORK_NODES"
+                :key="node.id"
+                class="terrafab-node-item"
+              >
+                <div class="node-head">
+                  <strong>{{ node.name }}</strong>
+                  <span class="node-status-pill">{{ node.status }}</span>
+                </div>
+                <div class="node-sub">{{ node.role }} · {{ node.location }}</div>
+                <div class="node-metrics-bar">
+                  <span>Power: <strong>{{ node.powerCapacityMw }} MW</strong></span>
+                  <span>Speed: <strong>{{ node.turnaroundTime }}</strong></span>
+                </div>
+                <p class="node-focus">{{ node.focus }}</p>
+                <button
+                  v-if="node.coords[0] !== 0"
+                  class="fly-node-btn"
+                  type="button"
+                  @click="flyToTarget(node.coords[0], node.coords[1], 1500, 45, -50)"
+                >
+                  VECTOR CAMERA 3D ↗
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. STARLINK COMMERCIAL AVAILABILITY & PLANS -->
+          <div class="biz-card">
+            <div class="biz-card-header">
+              <span class="biz-logo">🌐 COMMERCIAL SERVICE & PRICING</span>
+              <span class="biz-badge-avail">99.9% GLOBAL</span>
+            </div>
+            <div class="plan-selector-chips">
+              <button
+                v-for="plan in STARLINK_BUSINESS_PLANS"
+                :key="plan.id"
+                class="plan-chip"
+                :class="{ active: selectedBizPlan.id === plan.id }"
+                @click="selectedBizPlan = plan"
+              >
+                {{ plan.icon }} {{ plan.name.split(' ')[1] || 'Plan' }}
+              </button>
+            </div>
+
+            <div class="plan-details-box">
+              <div class="plan-title-row">
+                <h4>{{ selectedBizPlan.icon }} {{ selectedBizPlan.name }}</h4>
+                <div class="plan-price-tag">
+                  <strong>${{ selectedBizPlan.monthlyCost }}</strong>/mo
+                  <small v-if="selectedBizPlan.hardwareCost > 0">(${{ selectedBizPlan.hardwareCost }} HW)</small>
+                </div>
+              </div>
+              <p class="plan-target"><strong>TARGET:</strong> {{ selectedBizPlan.target }}</p>
+              <div class="plan-specs-grid">
+                <div>DOWN: <strong>{{ selectedBizPlan.downlinkMbps }}</strong></div>
+                <div>UP: <strong>{{ selectedBizPlan.uplinkMbps }}</strong></div>
+                <div>PING: <strong>{{ selectedBizPlan.latencyMs }}</strong></div>
+                <div>UPTIME: <strong>{{ selectedBizPlan.availabilityGlobalPct }}%</strong></div>
+              </div>
+              <ul class="plan-features">
+                <li v-for="feat in selectedBizPlan.features" :key="feat">✔ {{ feat }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 3. FINANCIAL LATENCY & ROI ARBITRAGE SIMULATOR -->
+          <div class="biz-card arbitrage-card">
+            <div class="biz-card-header">
+              <span class="biz-logo">📈 FINANCIAL ARBITRAGE & ROI</span>
+              <span class="biz-badge-roi">+{{ bizArbitrage.annualRoiPct }}% ROI</span>
+            </div>
+            <div class="arbitrage-toggle-row">
+              <label>SCENARIO:</label>
+              <select v-model="selectedArbitrageScenario" class="biz-select">
+                <option value="HFT_FINANCE">High-Frequency Trading (London-NY-Tokyo)</option>
+                <option value="MARITIME_CONTAINER">Global Container Fleet (50 Vessels)</option>
+                <option value="DATA_CENTER_FAILOVER">Enterprise 110kV Blackout Failover</option>
+              </select>
+            </div>
+            <div class="arbitrage-stats-grid">
+              <div class="arb-stat">
+                <small>VACUUM LATENCY SAVINGS</small>
+                <strong class="green-text">-{{ bizArbitrage.latencySavedMs }} ms</strong>
+              </div>
+              <div class="arb-stat">
+                <small>MONTHLY RISK MITIGATION</small>
+                <strong>${{ (bizArbitrage.riskMitigationValueUsd / 1000).toFixed(0) }}k</strong>
+              </div>
+              <div class="arb-stat">
+                <small>STARLINK MONTHLY COST</small>
+                <strong>${{ (bizArbitrage.starlinkCostUsd / 1000).toFixed(0) }}k</strong>
+              </div>
+              <div class="arb-stat">
+                <small>NET MONTHLY BENEFIT</small>
+                <strong class="gold-text">${{ (bizArbitrage.netMonthlyBenefitUsd / 1000).toFixed(0) }}k</strong>
+              </div>
+            </div>
+            <p class="arb-note">{{ bizArbitrage.vacuumSpeedVsGlassAdvantage }}</p>
+          </div>
+
+          <!-- 4. PLANETARY FUTURE OUTLOOK 2026 - 2030 -->
+          <div class="biz-card future-card">
+            <div class="biz-card-header">
+              <span class="biz-logo">🔮 FUTURE OUTLOOK 2026–2030</span>
+              <span class="biz-badge-dom">DOMINANCE INDEX</span>
+            </div>
+            <div class="timeline-stepper">
+              <button
+                v-for="ph in FUTURE_OUTLOOK_PHASES"
+                :key="ph.year"
+                class="timeline-step-btn"
+                :class="{ active: selectedOutlookPhase.year === ph.year }"
+                @click="selectedOutlookPhase = ph"
+              >
+                {{ ph.year }}
+              </button>
+            </div>
+
+            <div class="timeline-phase-body">
+              <h4>{{ selectedOutlookPhase.title }}</h4>
+              <div class="future-metrics-row">
+                <div>SATELLITES: <strong>{{ selectedOutlookPhase.satellitesInOrbit.toLocaleString() }}</strong></div>
+                <div>OPTICAL ISL: <strong>{{ selectedOutlookPhase.opticalLaserSpeed }}</strong></div>
+                <div>REVENUE: <strong>{{ selectedOutlookPhase.annualRunRate }}</strong></div>
+                <div>POWER: <strong>{{ selectedOutlookPhase.powerDemandGw }}</strong></div>
+              </div>
+              <p class="phase-desc">{{ selectedOutlookPhase.summary }}</p>
+              <div class="dominance-bar-wrapper">
+                <div class="dominance-lbl">
+                  <span>Global Space & Terrestrial AI Dominance</span>
+                  <strong>{{ selectedOutlookPhase.starlinkDominanceIndex }}%</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" :style="{ width: selectedOutlookPhase.starlinkDominanceIndex + '%' }"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -1981,6 +2154,362 @@ onUnmounted(() => {
 .sim-pill.active {
   border-color: #22c55e;
   color: #4ade80;
+}
+
+/* ── TERRAFAB & BIZ INTELLIGENCE CONSOLE STYLES ────────────────────────── */
+.highlight-biz-tab.active {
+  background: rgba(234, 179, 8, 0.25) !important;
+  border-color: #eab308 !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.4) !important;
+}
+
+.biz-card {
+  background: rgba(10, 15, 30, 0.88);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 6px;
+  padding: 0.8rem;
+  backdrop-filter: blur(8px);
+  margin-bottom: 0.8rem;
+}
+
+.biz-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.biz-logo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #facc15;
+}
+
+.biz-badge-special, .biz-badge-avail, .biz-badge-roi, .biz-badge-dom {
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+.biz-badge-special { background: rgba(234, 179, 8, 0.2); color: #fef08a; border: 1px solid #eab308; }
+.biz-badge-avail { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid #22c55e; }
+.biz-badge-roi { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid #38bdf8; }
+.biz-badge-dom { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid #a855f7; }
+
+.biz-desc {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  line-height: 1.35;
+  margin-bottom: 0.6rem;
+}
+
+.terrafab-nodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.terrafab-node-item {
+  background: rgba(2, 6, 23, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.node-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.node-head strong {
+  font-size: 0.68rem;
+  color: #f8fafc;
+}
+
+.node-status-pill {
+  font-size: 0.52rem;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  padding: 0.1rem 0.25rem;
+  border-radius: 2px;
+}
+
+.node-sub {
+  font-size: 0.58rem;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+
+.node-metrics-bar {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.56rem;
+  color: #94a3b8;
+  margin: 0.3rem 0;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+}
+
+.node-metrics-bar strong {
+  color: #38bdf8;
+}
+
+.node-focus {
+  font-size: 0.55rem;
+  color: #94a3b8;
+  margin: 0.2rem 0 0.4rem 0;
+  line-height: 1.3;
+}
+
+.fly-node-btn {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.fly-node-btn:hover {
+  background: #38bdf8;
+  color: #020617;
+}
+
+/* Plan selector */
+.plan-selector-chips {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 0.6rem;
+}
+
+.plan-chip {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 0.56rem;
+  padding: 0.25rem 0.45rem;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.plan-chip.active {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: #22c55e;
+  color: #86efac;
+}
+
+.plan-details-box {
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.6rem;
+}
+
+.plan-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+
+.plan-title-row h4 {
+  font-size: 0.7rem;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.plan-price-tag strong {
+  font-size: 0.8rem;
+  color: #22c55e;
+}
+
+.plan-price-tag small {
+  font-size: 0.55rem;
+  color: #94a3b8;
+}
+
+.plan-target {
+  font-size: 0.58rem;
+  color: #cbd5e1;
+  margin-bottom: 0.4rem;
+}
+
+.plan-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.25rem;
+  font-size: 0.56rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.3rem 0.5rem;
+  border-radius: 3px;
+  margin-bottom: 0.4rem;
+}
+
+.plan-specs-grid strong {
+  color: #f1f5f9;
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.55rem;
+  color: #94a3b8;
+}
+
+/* Arbitrage */
+.biz-select {
+  background: #091322;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+  font-size: 0.58rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  width: 100%;
+  margin-top: 0.2rem;
+}
+
+.arbitrage-toggle-row label {
+  font-size: 0.55rem;
+  color: #94a3b8;
+}
+
+.arbitrage-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.arb-stat {
+  background: rgba(2, 6, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.4rem;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.arb-stat small {
+  font-size: 0.5rem;
+  color: #94a3b8;
+}
+
+.arb-stat strong {
+  font-size: 0.75rem;
+  color: #f8fafc;
+}
+
+.green-text { color: #22c55e !important; }
+.gold-text { color: #facc15 !important; }
+
+.arb-note {
+  font-size: 0.55rem;
+  color: #38bdf8;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Future outlook timeline */
+.timeline-stepper {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-step-btn {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 0.58rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.timeline-step-btn.active {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #a855f7;
+  color: #d8b4fe;
+}
+
+.timeline-phase-body h4 {
+  font-size: 0.68rem;
+  color: #f8fafc;
+  margin-bottom: 0.3rem;
+}
+
+.future-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.25rem;
+  font-size: 0.55rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.3rem 0.5rem;
+  border-radius: 3px;
+  margin-bottom: 0.4rem;
+}
+
+.future-metrics-row strong {
+  color: #c084fc;
+}
+
+.phase-desc {
+  font-size: 0.58rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+  margin-bottom: 0.5rem;
+}
+
+.dominance-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.dominance-lbl {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.52rem;
+  color: #94a3b8;
+}
+
+.dominance-lbl strong {
+  color: #a855f7;
+}
+
+.progress-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #a855f7, #facc15);
+  border-radius: 3px;
+  transition: width 0.3s ease;
 }
 </style>
 
