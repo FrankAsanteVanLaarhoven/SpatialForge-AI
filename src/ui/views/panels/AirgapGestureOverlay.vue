@@ -157,15 +157,15 @@ onUnmounted(() => {
     <!-- Quick Gesture Guides & Controls -->
     <div class="gesture-tips">
       <div class="tip-row" :class="{ highlight: isGrabbing }">
-        <span class="tip-icon">🤏</span>
+        <span class="tip-icon"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8h6M5 8l2-2M5 8l2 2M11 8l-2-2M11 8l-2 2"/></svg></span>
         <span class="tip-desc"><strong>Pinch Index &amp; Thumb:</strong> Grab &amp; Drag Panels / Globe</span>
       </div>
       <div class="tip-row" :class="{ highlight: currentGesture.includes('SWIPE') }">
-        <span class="tip-icon">👋</span>
+        <span class="tip-icon"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8h12M10 4l4 4-4 4"/></svg></span>
         <span class="tip-desc"><strong>Quick Hand Swipe:</strong> Cycle Tactical Views &amp; Shots</span>
       </div>
       <div class="tip-row" :class="{ highlight: currentGesture === 'OPEN_PALM' }">
-        <span class="tip-icon">🖐️</span>
+        <span class="tip-icon"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="2"/></svg></span>
         <span class="tip-desc"><strong>Open Palm:</strong> Hover &amp; Point Laser Cursor</span>
       </div>
     </div>

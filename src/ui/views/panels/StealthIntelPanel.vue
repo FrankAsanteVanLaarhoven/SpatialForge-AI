@@ -219,10 +219,10 @@ onUnmounted(() => {
             <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><path d="M2 8a6 6 0 1 0 1.5-4M2 3v5h5"/></svg>Rotate Browser TLS Profile (Go)
           </button>
           <button class="action-btn purple" @click="triggerAction('merkle-proof')">
-            ⚡ Verify SHA-256 Merkle Proof (Rust)
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><path d="M8 1v14M3 6l5-5 5 5M4 11l4 4 4-4"/></svg>Verify SHA-256 Merkle Proof (Rust)
           </button>
           <button class="action-btn amber" @click="triggerAction('spoof-test')">
-            ⚠️ Evaluate Kinematic Spoofing (Python)
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><path d="M8 2l6 11H2zM8 6v4M8 12h.01"/></svg>Evaluate Kinematic Spoofing (Python)
           </button>
           <button class="action-btn emerald" @click="triggerAction('redis-probe')">
             <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: -1px; margin-right: 4px;"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 7h4M6 10h4"/></svg>Ping Redis Cache & Vector Bus

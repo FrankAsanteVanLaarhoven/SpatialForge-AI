@@ -165,6 +165,70 @@ export function createStarshipScene(viewer) {
     starlinkEntities.push(sat);
   }
 
+  // 8. TEXAS SEMICONDUCTOR CORRIDOR & SOVEREIGN FABRIC NODES
+  const austinFabPos = C.Cartesian3.fromDegrees(-97.6171, 30.2223, 160.0);
+  const grimesFabPos = C.Cartesian3.fromDegrees(-95.9800, 30.5500, 95.0);
+  const bocaChicaPos = C.Cartesian3.fromDegrees(STARBASE_LOCATION.longitude, STARBASE_LOCATION.latitude, 10.0);
+
+  // Austin Research Fab [L2/L3] 3D Beacon
+  dataSource.entities.add({
+    name: 'Austin Research Fab (L2/L3)',
+    position: austinFabPos,
+    point: {
+      pixelSize: 10,
+      color: C.Color.fromCssColorString('#00f0ff'),
+      outlineColor: C.Color.WHITE,
+      outlineWidth: 2,
+    },
+    label: {
+      text: 'AUSTIN RESEARCH FAB [L2/L3]\n120 MW · DESIGN • MAKE • TEST',
+      font: '10px monospace',
+      style: C.LabelStyle.FILL_AND_OUTLINE,
+      fillColor: C.Color.fromCssColorString('#00f0ff'),
+      outlineColor: C.Color.BLACK,
+      outlineWidth: 2,
+      verticalOrigin: C.VerticalOrigin.BOTTOM,
+      pixelOffset: new C.Cartesian2(0, -12),
+      distanceDisplayCondition: new C.DistanceDisplayCondition(0, 5000000),
+    },
+  });
+
+  // Grimes County MacroFab [L1/L3] 3D Beacon
+  dataSource.entities.add({
+    name: 'Grimes County MacroFab (L1/L3)',
+    position: grimesFabPos,
+    point: {
+      pixelSize: 10,
+      color: C.Color.fromCssColorString('#a855f7'),
+      outlineColor: C.Color.WHITE,
+      outlineWidth: 2,
+    },
+    label: {
+      text: 'GRIMES COUNTY MACROFAB [L1/L3]\n450 MW · GIGAWATT FOUNDRY',
+      font: '10px monospace',
+      style: C.LabelStyle.FILL_AND_OUTLINE,
+      fillColor: C.Color.fromCssColorString('#c084fc'),
+      outlineColor: C.Color.BLACK,
+      outlineWidth: 2,
+      verticalOrigin: C.VerticalOrigin.BOTTOM,
+      pixelOffset: new C.Cartesian2(0, -12),
+      distanceDisplayCondition: new C.DistanceDisplayCondition(0, 5000000),
+    },
+  });
+
+  // Silicon Corridor Terrestrial & Space Optical Backbone
+  dataSource.entities.add({
+    name: 'Texas Silicon Corridor Laser Bus',
+    polyline: {
+      positions: [austinFabPos, grimesFabPos, bocaChicaPos],
+      width: 2.5,
+      material: new C.PolylineGlowMaterialProperty({
+        glowPower: 0.3,
+        color: C.Color.fromCssColorString('#00f0ff'),
+      }),
+    },
+  });
+
   // Trajectory history polyline
   const boosterTrailPositions = [];
   const shipTrailPositions = [];

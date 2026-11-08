@@ -215,7 +215,7 @@ export function initInceptionSplash() {
       stageSeparated = true;
       caught = true;
       chopstickAngle = 0; // Arms clamped shut!
-      statusText = '⚡ MECHAZILLA CHOPSTICKS CATCH CONFIRMED · SUPER HEAVY CAPTURED ON STAND!';
+      statusText = '[CATCH LOCKED] MECHAZILLA CHOPSTICKS CATCH CONFIRMED · SUPER HEAVY CAPTURED ON STAND';
     } else {
       // Phase 8: Triumph Hold & Seamless Cycle (35.5s - 36s)
       x = padX;
