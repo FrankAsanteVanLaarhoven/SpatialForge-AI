@@ -1,17 +1,22 @@
 /**
- * SpatialForge 3D // SpaceX TerraFab, MacroFab & Starlink Business Intelligence Engine
+ * SpatialForge 3D // Sovereign Semiconductor & Orbital Compute Fabric
  * 
  * Provides:
  * 1. Global Starlink commercial availability, capacity density, plans & cost calculator
  * 2. Financial arbitrage & latency ROI calculator (speed of light in vacuum vs terrestrial fiber)
- * 3. SpaceX "TerraFab & MacroFab" AWS Cloud competitor architecture
+ * 3. Sovereign Semiconductor & Orbital AWS Cloud Architecture (Austin Research Fab -> Grimes MegaFab -> Boca Chica -> LEO)
  * 4. 2026–2030 Planetary Future Outlook simulation model
+ * 5. Re-engineered 6-Layer Closed-Loop Coordination Engine (L1-L6)
  */
+
+import { sovereignFabEngine, LAYER_DEFINITIONS, SOVEREIGN_CHIP_FAMILIES } from './sovereignFabCoordinationEngine.js';
+
+export { sovereignFabEngine, LAYER_DEFINITIONS, SOVEREIGN_CHIP_FAMILIES };
 
 export const STARLINK_BUSINESS_PLANS = Object.freeze([
   {
     id: 'plan_business_priority',
-    name: 'Starlink Business Priority',
+    name: 'Business Priority Terminal',
     target: 'Enterprises, Remote Offices, Critical Utilities',
     hardwareCost: 599,
     monthlyCost: 250,
@@ -20,11 +25,11 @@ export const STARLINK_BUSINESS_PLANS = Object.freeze([
     latencyMs: '20 - 35 ms',
     availabilityGlobalPct: 99.4,
     features: ['Public IPv4', 'Priority Network Routing', '24/7 SLA Support', 'Direct-to-Cell Standby'],
-    icon: '🏢'
+    iconType: 'business'
   },
   {
     id: 'plan_maritime_priority',
-    name: 'Starlink Global Maritime Priority',
+    name: 'Global Maritime Priority',
     target: 'Commercial Fleets, Container Ships, Offshore Rigs',
     hardwareCost: 2500,
     monthlyCost: 1000,
@@ -33,11 +38,11 @@ export const STARLINK_BUSINESS_PLANS = Object.freeze([
     latencyMs: '22 - 38 ms',
     availabilityGlobalPct: 99.9,
     features: ['10 Tbps Optical Laser Mesh Routing', 'Zero Shore-Station Dependence', 'Coverage Across All Oceans', 'AIS Transponder Integration'],
-    icon: '🚢'
+    iconType: 'maritime'
   },
   {
     id: 'plan_aviation',
-    name: 'Starlink Aviation In-Flight',
+    name: 'Aviation Transonic Link',
     target: 'Commercial Airlines, Business Jets, Military Transports',
     hardwareCost: 15000,
     monthlyCost: 10000,
@@ -46,24 +51,24 @@ export const STARLINK_BUSINESS_PLANS = Object.freeze([
     latencyMs: '20 - 30 ms',
     availabilityGlobalPct: 99.8,
     features: ['Aerodynamic Phased Array Antenna', 'Mach 0.9+ Flight Vector Tracking', 'Gate-to-Gate Continuous Stream', 'Direct In-Flight Voice/Data'],
-    icon: '✈️'
+    iconType: 'aviation'
   },
   {
     id: 'plan_d2c_enterprise',
-    name: 'Direct-to-Cell IoT & Cellular Carrier Mesh',
+    name: 'Direct-to-Cell Mesh',
     target: 'Telcos (T-Mobile, Vodafone, Kyivstar), Logistics, FirstNet',
-    hardwareCost: 0, // Zero hardware modifications on phones
-    monthlyCost: 45, // Per connected seat/node
+    hardwareCost: 0,
+    monthlyCost: 45,
     downlinkMbps: '2 - 8 Mbps per phone',
     uplinkMbps: '1 - 4 Mbps',
     latencyMs: '24 - 40 ms',
     availabilityGlobalPct: 99.95,
     features: ['Standard 4G/5G Handset Compatible', '1910-1950 MHz RF Spectrum Bonding', 'Hurricane & Blackout Autonomous Handover', 'Global Emergency SOS'],
-    icon: '📱'
+    iconType: 'cellular'
   },
   {
     id: 'plan_terrafab_orbital_cloud',
-    name: 'SpaceX TerraFab & Orbital AWS Cloud',
+    name: 'Sovereign TerraFab & Orbital AWS Cloud',
     target: 'Autonomous Robotics, Hyperscale AI Labs, Sovereign Defense',
     hardwareCost: 0,
     monthlyCost: 25000,
@@ -72,14 +77,14 @@ export const STARLINK_BUSINESS_PLANS = Object.freeze([
     latencyMs: '12 - 20 ms (Vacuum Laser)',
     availabilityGlobalPct: 99.999,
     features: ['On-Orbit Tensor Processing Units (TPUs)', 'Austin Research Fab Custom Silicon', 'Grimes County MacroFab Compute', '60% Cheaper than AWS/Azure'],
-    icon: '⚡'
+    iconType: 'orbital'
   }
 ]);
 
 export const TERRAFAB_NETWORK_NODES = Object.freeze([
   {
     id: 'node-austin-research',
-    name: 'TerraFab Austin Research Fab',
+    name: 'Austin Research Fab (L2/L3)',
     role: 'Design • Make • Test Cleanroom Under One Roof',
     location: 'Austin, Texas',
     coords: [30.2223, -97.6171],
@@ -90,7 +95,7 @@ export const TERRAFAB_NETWORK_NODES = Object.freeze([
   },
   {
     id: 'node-grimes-macrofab',
-    name: 'MacroFab Grimes County Mega-Foundry',
+    name: 'Grimes County MacroFab (L1/L3)',
     role: 'Gigawatt-Scale Silicon Mass Production',
     location: 'Grimes County, Texas',
     coords: [30.5500, -95.9800],
@@ -101,7 +106,7 @@ export const TERRAFAB_NETWORK_NODES = Object.freeze([
   },
   {
     id: 'node-boca-chica',
-    name: 'Starbase Boca Chica Orbital Launch Mount & Tower',
+    name: 'Starbase Boca Chica Catch Tower (L6 Launch)',
     role: 'Mechazilla Rapid Re-Flight & Orbital Delivery Hub',
     location: 'Boca Chica, Texas',
     coords: [25.9972, -97.1561],
@@ -112,7 +117,7 @@ export const TERRAFAB_NETWORK_NODES = Object.freeze([
   },
   {
     id: 'node-orbital-cloud-leo',
-    name: 'Starlink Gen-3 AI Orbital Cloud (LEO 550km)',
+    name: 'Gen-3 Orbital Compute Mesh (LEO 550km)',
     role: 'Space-Edge Serverless Compute & GPU Inference',
     location: 'Low Earth Orbit (550 km Sun-Synchronous)',
     coords: [0.0, 0.0],
@@ -165,18 +170,14 @@ export function calculateBusinessArbitrage(scenario = 'HFT_FINANCE', monthlyGbVo
   let starlinkCostUsd = 15000;
 
   if (scenario === 'HFT_FINANCE') {
-    // High-Frequency Trading: London - New York - Tokyo arbitrage
-    // 14.5ms lower latency via 10 Tbps vacuum laser mesh = immense financial value
     latencySavedMs = 14.8;
-    riskMitigationValueUsd = 850000; // Value of latency advantage in trade execution
+    riskMitigationValueUsd = 850000;
     starlinkCostUsd = 25000;
   } else if (scenario === 'MARITIME_CONTAINER') {
-    // 50 container ships bypassing congested ports & dark fleets
     latencySavedMs = 65.0;
     riskMitigationValueUsd = 420000;
     starlinkCostUsd = 35000;
   } else if (scenario === 'DATA_CENTER_FAILOVER') {
-    // Enterprise cloud failover avoiding 110kV blackout downtime ($140k/hr)
     latencySavedMs = 22.0;
     riskMitigationValueUsd = 1200000;
     starlinkCostUsd = 18000;

@@ -29,7 +29,11 @@ import {
   TERRAFAB_NETWORK_NODES,
   FUTURE_OUTLOOK_PHASES,
   calculateBusinessArbitrage,
+  sovereignFabEngine,
+  LAYER_DEFINITIONS,
+  SOVEREIGN_CHIP_FAMILIES,
 } from '../../../layers/starship/terraFabBusinessIntelligence.js';
+import { SVG_ICONS, getEngIcon } from '../../icons/engineeringIcons.js';
 
 const props = defineProps({
   visible: { type: Boolean, default: true },
@@ -52,6 +56,27 @@ const selectedBizPlan = ref(STARLINK_BUSINESS_PLANS[0]);
 const selectedOutlookPhase = ref(FUTURE_OUTLOOK_PHASES[0]);
 const selectedArbitrageScenario = ref('HFT_FINANCE');
 const bizArbitrage = computed(() => calculateBusinessArbitrage(selectedArbitrageScenario.value));
+
+// Sovereign Fab Coordination Layer (L1-L6) State
+const fabEngineSummary = ref(sovereignFabEngine.getLayerHealthSummary());
+const selectedFabLayerKey = ref('L3');
+const selectedFabLayer = computed(() => LAYER_DEFINITIONS[selectedFabLayerKey.value]);
+const selectedFabChip = ref(fabEngineSummary.value.chipInventory[0]);
+const selectedBizSubSection = ref('FAB_COORDINATION'); // 'FAB_COORDINATION' | 'COMMERCIAL_PLANS' | 'ARBITRAGE' | 'OUTLOOK'
+let fabUnsub = null;
+
+onMounted(() => {
+  fabUnsub = sovereignFabEngine.subscribe((updatedSummary) => {
+    fabEngineSummary.value = updatedSummary;
+    if (!selectedFabChip.value && updatedSummary.chipInventory.length > 0) {
+      selectedFabChip.value = updatedSummary.chipInventory[0];
+    }
+  });
+});
+
+onUnmounted(() => {
+  if (fabUnsub) fabUnsub();
+});
 
 // Telemetry computed
 const telemetry = computed(() => calculateStarshipTelemetry(missionTimeS.value));
@@ -241,7 +266,7 @@ onUnmounted(() => {
           @click="toggleShowcase()"
           title="Toggle 36-Second Continuous Takeoff & Catch Showcase"
         >
-          {{ isShowcaseMode ? '🎬 36S SHOWCASE LOOP' : '⏱ MANUAL CLOCK' }}
+          <span class="eng-icon-inline" v-html="SVG_ICONS.loop"></span> {{ isShowcaseMode ? '36S SHOWCASE LOOP' : 'MANUAL CLOCK' }}
         </button>
 
         <button
@@ -250,7 +275,7 @@ onUnmounted(() => {
           @click="toggleCinematicView()"
           title="Toggle Cinematic Mode: Keep Full 3D Globe Backdrop Clear"
         >
-          {{ isCinematicView ? '👁 GLOBE VIEW' : '📊 FULL HUD' }}
+          <span class="eng-icon-inline" v-html="SVG_ICONS.cinematic"></span> {{ isCinematicView ? 'GLOBE VIEW' : 'FULL HUD' }}
         </button>
       </div>
 
@@ -271,7 +296,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <button class="starship-close-btn" type="button" @click="emit('close')" title="Exit Starship Mission">×</button>
+      <button class="starship-close-btn" type="button" @click="emit('close')" title="Exit Starship Mission" v-html="SVG_ICONS.close"></button>
     </header>
 
     <!-- MAIN COCKPIT VIEWPORT -->
@@ -350,7 +375,7 @@ onUnmounted(() => {
             </div>
 
             <button class="jump-catch-btn" type="button" @click="jumpToCatch()">
-              ⚡ JUMP TO CHOPSTICK CATCH
+              <span class="eng-icon-inline" v-html="SVG_ICONS.chopstick"></span> JUMP TO CHOPSTICK CATCH
             </button>
           </div>
         </div>
@@ -451,7 +476,7 @@ onUnmounted(() => {
         <div v-if="activeTab === 'telemetry'" class="tab-content">
           <div class="starlink-card">
             <div class="starlink-card-header">
-              <span class="starlink-logo">🛰️ STARLINK SPACE MESH</span>
+              <span class="starlink-logo"><span class="eng-icon-inline" v-html="SVG_ICONS.orbital"></span> STARLINK SPACE MESH</span>
               <div class="starlink-badges-group">
                 <span class="starlink-badge-11k">11,000 SATELLITES</span>
                 <span class="starlink-badge-live">LIVE LEO</span>
@@ -466,7 +491,7 @@ onUnmounted(() => {
               </div>
               <div class="laser-indicator">
                 <div class="laser-beam-anim"></div>
-                <span class="laser-mult">100× SPEED</span>
+                <span class="laser-mult"><span class="eng-icon-inline" v-html="SVG_ICONS.speed"></span> 100× SPEED</span>
               </div>
               <div class="laser-nextgen">
                 <span class="laser-lbl">NEXT GEN:</span>
@@ -477,28 +502,28 @@ onUnmounted(() => {
             <!-- ORBITAL AI & INDUSTRIAL INFRASTRUCTURE CROSS-LINKS -->
             <div class="infrastructure-matrix-chips">
               <div class="infra-chip active">
-                <span class="infra-icon">🛰️</span>
+                <span class="infra-icon" v-html="SVG_ICONS.orbital"></span>
                 <div class="infra-text">
                   <strong>STARLINK</strong>
                   <small>11,000+ Active</small>
                 </div>
               </div>
               <div class="infra-chip active">
-                <span class="infra-icon">🧠</span>
+                <span class="infra-icon" v-html="SVG_ICONS.chip"></span>
                 <div class="infra-text">
                   <strong>AI COMPUTERS IN ORBIT</strong>
                   <small>GPU Inference</small>
                 </div>
               </div>
               <div class="infra-chip">
-                <span class="infra-icon">🏭</span>
+                <span class="infra-icon" v-html="SVG_ICONS.cleanroom"></span>
                 <div class="infra-text">
                   <strong>CHIP FACTORIES</strong>
                   <small>TSMC • Intel • Samsung</small>
                 </div>
               </div>
               <div class="infra-chip">
-                <span class="infra-icon">⚡</span>
+                <span class="infra-icon" v-html="SVG_ICONS.power"></span>
                 <div class="infra-text">
                   <strong>POWER PLANTS</strong>
                   <small>Palo Verde • Hoover</small>
@@ -524,7 +549,7 @@ onUnmounted(() => {
             <!-- MECHAZILLA TOWER CATCH STATUS -->
             <div class="mechazilla-quick-card" v-if="telemetry.booster.caught || missionTimeS >= 400">
               <div class="mechazilla-quick-head">
-                <span class="tower-icon">🏗️</span>
+                <span class="tower-icon" v-html="SVG_ICONS.chopstick"></span>
                 <strong>THE REAL TOWER: MECHAZILLA</strong>
                 <span class="catch-pill">ONCE AN HOUR · MUSK</span>
               </div>
@@ -585,7 +610,7 @@ onUnmounted(() => {
                 :disabled="isGeneratingSitrep"
                 @click="handleGenerateSitrep"
               >
-                {{ isGeneratingSitrep ? '⚡ ANALYZING SENSOR MATRIX...' : '⚡ RUN AUTONOMOUS AI SITREP' }}
+                <span class="eng-icon-inline" v-html="SVG_ICONS.metrics"></span> {{ isGeneratingSitrep ? 'ANALYZING SENSOR MATRIX...' : 'RUN AUTONOMOUS AI SITREP' }}
               </button>
             </div>
 
@@ -613,7 +638,7 @@ onUnmounted(() => {
                 v-model="searchQuery"
                 @keydown.enter="handleSearch"
               />
-              <button class="infra-search-btn" type="button" @click="handleSearch">FLY ↗</button>
+              <button class="infra-search-btn" type="button" @click="handleSearch">FLY <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span></button>
             </div>
             <p v-if="searchFeedback" class="search-feedback-msg">{{ searchFeedback }}</p>
             <div class="quick-chips-row">
@@ -638,7 +663,7 @@ onUnmounted(() => {
           <!-- DATACENTER LAYER SECTION -->
           <div class="infra-card">
             <div class="infra-card-header">
-              <span class="infra-title">🏢 HYPERSCALE DATA CENTERS</span>
+              <span class="infra-title"><span class="eng-icon-inline" v-html="SVG_ICONS.business"></span> HYPERSCALE DATA CENTERS</span>
               <span class="infra-badge-count">4,300+ MAPPED</span>
             </div>
             <p class="infra-desc">Global AI compute clusters, colocation campuses (Equinix, Digital Realty, AWS, Google Cloud, Azure) with verified power draw.</p>
@@ -657,7 +682,7 @@ onUnmounted(() => {
               >
                 <span class="sample-dot blue"></span>
                 <span class="sample-name">{{ item.name }}</span>
-                <span class="sample-loc">{{ item.city }} ↗</span>
+                <span class="sample-loc">{{ item.city }} <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span></span>
               </div>
             </div>
           </div>
@@ -665,7 +690,7 @@ onUnmounted(() => {
           <!-- ENERGY SOURCES & POWER GRID SECTION -->
           <div class="infra-card">
             <div class="infra-card-header">
-              <span class="infra-title">⚡ ENERGY SOURCES & POWER GRID</span>
+              <span class="infra-title"><span class="eng-icon-inline" v-html="SVG_ICONS.power"></span> ENERGY SOURCES & POWER GRID</span>
               <span class="infra-badge-count energy">500+ DAMS & GRIDS</span>
             </div>
             <p class="infra-desc">Hydroelectric generating stations, satellite radiative heat (FIRMS MW), substations, and global subsea fiber cables.</p>
@@ -687,7 +712,7 @@ onUnmounted(() => {
               >
                 <span class="sample-dot" :class="item.category === 'energy_dam' ? 'green' : 'purple'"></span>
                 <span class="sample-name">{{ item.name }}</span>
-                <span class="sample-loc">{{ item.city }} ↗</span>
+                <span class="sample-loc">{{ item.city }} <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span></span>
               </div>
             </div>
           </div>
@@ -695,17 +720,17 @@ onUnmounted(() => {
           <!-- GRID BLACKOUT & SATELLITE FAILOVER SIMULATOR -->
           <div class="infra-card">
             <div class="infra-card-header">
-              <span class="infra-title">💥 GRID OUTAGE & D2C FAILOVER SIMULATOR</span>
+              <span class="infra-title"><span class="eng-icon-inline" v-html="SVG_ICONS.alert"></span> GRID OUTAGE & D2C FAILOVER SIMULATOR</span>
               <span class="infra-badge-count danger">STRESS TEST</span>
             </div>
             <p class="infra-desc">Simulates loss of 110kV transmission feed: models data center UPS depletion and autonomous handover to Starlink Direct-to-Cell LEO mesh.</p>
             <div class="infra-action-row">
               <button class="infra-toggle-btn danger-btn" type="button" @click="handleSimulateGridFailure('Frankfurt')">
-                ⚠️ SIMULATE 110kV GRID BLACKOUT
+                <span class="eng-icon-inline" v-html="SVG_ICONS.alert"></span> SIMULATE 110kV GRID BLACKOUT
               </button>
             </div>
             <div v-if="gridSimulationResult" class="simulation-result-box">
-              <strong class="sim-alert">⚡ {{ gridSimulationResult.message }}</strong>
+              <strong class="sim-alert"><span class="eng-icon-inline" v-html="SVG_ICONS.alert"></span> {{ gridSimulationResult.message }}</strong>
               <div class="sim-badges">
                 <span class="sim-pill">POWER CUT: {{ gridSimulationResult.powerLostMw }} MW</span>
                 <span class="sim-pill">UPS RUNTIME: {{ gridSimulationResult.generatorBatteryReserveHours }}H</span>
@@ -732,25 +757,179 @@ onUnmounted(() => {
               <div class="media-action-row">
                 <span class="media-provider-name">{{ media.provider }}</span>
                 <button class="launch-stream-btn" type="button" @click.stop="openMedia(media.url)">
-                  LAUNCH FEED ↗
+                  LAUNCH FEED <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span>
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- TAB 4: TERRAFAB, MACROFAB & BIZ INTELLIGENCE CONSOLE -->
+        <!-- TAB 4: REVERSE-ENGINEERED SOVEREIGN FAB & BIZ COORDINATION FABRIC -->
         <div v-if="activeTab === 'biz'" class="tab-content">
-          <!-- 1. TERRAFAB & MACROFAB SILICON CLOUD NETWORK -->
-          <div class="biz-card">
+          <!-- NAVIGATION SUB-HEADER PILLS -->
+          <div class="biz-subnav-pills">
+            <button
+              class="biz-subnav-btn"
+              :class="{ active: selectedBizSubSection === 'FAB_COORDINATION' }"
+              @click="selectedBizSubSection = 'FAB_COORDINATION'"
+            >
+              <span class="eng-icon-inline" v-html="SVG_ICONS.chip"></span>
+              FABRIC (L1-L6)
+            </button>
+            <button
+              class="biz-subnav-btn"
+              :class="{ active: selectedBizSubSection === 'COMMERCIAL_PLANS' }"
+              @click="selectedBizSubSection = 'COMMERCIAL_PLANS'"
+            >
+              <span class="eng-icon-inline" v-html="SVG_ICONS.antenna"></span>
+              COMMERCIAL PLANS
+            </button>
+            <button
+              class="biz-subnav-btn"
+              :class="{ active: selectedBizSubSection === 'ARBITRAGE' }"
+              @click="selectedBizSubSection = 'ARBITRAGE'"
+            >
+              <span class="eng-icon-inline" v-html="SVG_ICONS.metrics"></span>
+              LATENCY ROI
+            </button>
+            <button
+              class="biz-subnav-btn"
+              :class="{ active: selectedBizSubSection === 'OUTLOOK' }"
+              @click="selectedBizSubSection = 'OUTLOOK'"
+            >
+              <span class="eng-icon-inline" v-html="SVG_ICONS.orbital"></span>
+              2026-2030 OUTLOOK
+            </button>
+          </div>
+
+          <!-- SUB-SECTION A: 6-LAYER SOVEREIGN COORDINATION FABRIC -->
+          <div v-if="selectedBizSubSection === 'FAB_COORDINATION'" class="biz-card fabric-master-card">
             <div class="biz-card-header">
-              <span class="biz-logo">⚡ TERRAFAB & MACROFAB CLOUD</span>
-              <span class="biz-badge-special">AWS IN SPACE</span>
+              <span class="biz-logo">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.chip"></span>
+                SOVEREIGN FABRIC COORDINATION LAYER
+              </span>
+              <span class="biz-badge-special">CLOSED-LOOP DFM</span>
             </div>
             <p class="biz-desc">
-              Vertically integrated silicon foundries, orbital servers, and gigawatt power grids bypassing legacy cloud hyperscalers.
+              Full-stack 6-layer manufacturing architecture connecting cleanroom power grids, 2nm/3nm EUV lithography, 3D chiplet packaging, and orbital LEO computing clusters into a single observable event bus.
             </p>
 
+            <!-- 6-LAYER COORDINATION MATRIX GRID -->
+            <div class="fab-layers-matrix">
+              <div
+                v-for="(layerData, key) in fabEngineSummary.layers"
+                :key="key"
+                class="fab-layer-cell"
+                :class="{ active: selectedFabLayerKey === key.toUpperCase() }"
+                @click="selectedFabLayerKey = key.toUpperCase()"
+              >
+                <div class="layer-cell-top">
+                  <span class="layer-tag">{{ key.toUpperCase() }}</span>
+                  <span class="layer-status-dot" :class="layerData.status.toLowerCase()"></span>
+                </div>
+                <div class="layer-cell-title">{{ LAYER_DEFINITIONS[key.toUpperCase()].code }}</div>
+                <div class="layer-cell-meta">
+                  <span>{{ layerData.activeItems }} items</span>
+                  <span v-if="layerData.alerts > 0" class="alert-count">{{ layerData.alerts }} alert</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ACTIVE LAYER DETAIL CARD -->
+            <div class="active-layer-detail-card" v-if="selectedFabLayer">
+              <div class="detail-head">
+                <div class="detail-title-group">
+                  <strong>{{ selectedFabLayer.id }}: {{ selectedFabLayer.name }}</strong>
+                  <span class="facility-pill">{{ selectedFabLayer.facility }}</span>
+                </div>
+                <span class="metric-live-badge">{{ fabEngineSummary.layers[selectedFabLayerKey.toLowerCase()].throughput24h }} {{ selectedFabLayer.metricUnit }}</span>
+              </div>
+              <p class="detail-desc">{{ selectedFabLayer.description }}</p>
+            </div>
+
+            <!-- SPC STATISTICAL PROCESS CONTROL REAL-TIME ALERTS -->
+            <div class="spc-alert-box" v-if="fabEngineSummary.spcViolations.length > 0">
+              <div class="spc-head">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.alert"></span>
+                <strong>AUTOMATED STATISTICAL PROCESS CONTROL (SPC)</strong>
+                <span class="spc-pill">{{ fabEngineSummary.spcViolations[0].severity }}</span>
+              </div>
+              <div class="spc-content">
+                <div><strong>CHAMBER:</strong> {{ fabEngineSummary.spcViolations[0].chamberId }}</div>
+                <div><strong>RULE:</strong> {{ fabEngineSummary.spcViolations[0].rule }}</div>
+                <div><strong>PARAM:</strong> {{ fabEngineSummary.spcViolations[0].parameter }} = <span class="highlight-val">{{ fabEngineSummary.spcViolations[0].value }}</span> (UCL: {{ fabEngineSummary.spcViolations[0].ucl }})</div>
+                <div class="spc-action"><strong>AUTONOMOUS ACTION:</strong> {{ fabEngineSummary.spcViolations[0].action }}</div>
+              </div>
+            </div>
+
+            <!-- CHIP LIFECYCLE JOURNEY VIEWER (SILICON TO ORBIT) -->
+            <div class="lifecycle-card">
+              <div class="lifecycle-header">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.package"></span>
+                <strong>CHIP LIFECYCLE JOURNEY (SILICON TO ORBIT)</strong>
+              </div>
+              <div class="chip-picker-row">
+                <button
+                  v-for="chip in fabEngineSummary.chipInventory"
+                  :key="chip.chipId"
+                  class="chip-pick-btn"
+                  :class="{ active: selectedFabChip.chipId === chip.chipId }"
+                  @click="selectedFabChip = chip"
+                >
+                  {{ chip.chipId }}
+                </button>
+              </div>
+
+              <div class="chip-journey-detail" v-if="selectedFabChip">
+                <div class="journey-meta-row">
+                  <div>FAMILY: <strong>{{ selectedFabChip.family }}</strong></div>
+                  <div>GRADE: <strong class="green-text">{{ selectedFabChip.grade }}</strong></div>
+                  <div>YIELD: <strong>{{ selectedFabChip.yieldPercent }}%</strong></div>
+                  <div>THETA-JA: <strong>{{ selectedFabChip.thetaJA }} °C/W</strong></div>
+                </div>
+
+                <!-- 5-STAGE PIPELINE STEPPER -->
+                <div class="journey-steps-stepper">
+                  <div class="step-node active">
+                    <div class="step-circle" v-html="SVG_ICONS.chip"></div>
+                    <span class="step-name">L2 Design</span>
+                  </div>
+                  <div class="step-connector"></div>
+                  <div class="step-node active">
+                    <div class="step-circle" v-html="SVG_ICONS.cleanroom"></div>
+                    <span class="step-name">L3 Litho</span>
+                  </div>
+                  <div class="step-connector"></div>
+                  <div class="step-node active">
+                    <div class="step-circle" v-html="SVG_ICONS.package"></div>
+                    <span class="step-name">L4 3D Pkg</span>
+                  </div>
+                  <div class="step-connector"></div>
+                  <div class="step-node" :class="{ active: selectedFabChip.qualified }">
+                    <div class="step-circle" v-html="SVG_ICONS.test"></div>
+                    <span class="step-name">L5 Qual</span>
+                  </div>
+                  <div class="step-connector"></div>
+                  <div class="step-node" :class="{ active: selectedFabChip.telemetry }">
+                    <div class="step-circle" v-html="SVG_ICONS.orbital"></div>
+                    <span class="step-name">L6 Orbit</span>
+                  </div>
+                </div>
+
+                <div class="chip-destination-box">
+                  <div class="dest-label">CURRENT LOCATION & DISPOSITION:</div>
+                  <strong>{{ selectedFabChip.destination }}</strong>
+                  <div v-if="selectedFabChip.telemetry" class="in-situ-telemetry">
+                    <span>In-Situ Latency: <strong>{{ selectedFabChip.telemetry.latencyMs }} ms</strong></span>
+                    <span>Core Temp: <strong>{{ selectedFabChip.telemetry.inSituTempC }} °C</strong></span>
+                    <span>Throttling: <strong>{{ selectedFabChip.telemetry.throttling ? 'YES' : 'NONE (0%)' }}</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PHYSICAL TEXAS FAB NODES -->
             <div class="terrafab-nodes-list">
               <div
                 v-for="node in TERRAFAB_NETWORK_NODES"
@@ -764,7 +943,7 @@ onUnmounted(() => {
                 <div class="node-sub">{{ node.role }} · {{ node.location }}</div>
                 <div class="node-metrics-bar">
                   <span>Power: <strong>{{ node.powerCapacityMw }} MW</strong></span>
-                  <span>Speed: <strong>{{ node.turnaroundTime }}</strong></span>
+                  <span>Turnaround: <strong>{{ node.turnaroundTime }}</strong></span>
                 </div>
                 <p class="node-focus">{{ node.focus }}</p>
                 <button
@@ -773,16 +952,19 @@ onUnmounted(() => {
                   type="button"
                   @click="flyToTarget(node.coords[0], node.coords[1], 1500, 45, -50)"
                 >
-                  VECTOR CAMERA 3D ↗
+                  VECTOR CAMERA 3D <span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- 2. STARLINK COMMERCIAL AVAILABILITY & PLANS -->
-          <div class="biz-card">
+          <!-- SUB-SECTION B: COMMERCIAL PLANS & AVAILABILITY -->
+          <div v-if="selectedBizSubSection === 'COMMERCIAL_PLANS'" class="biz-card">
             <div class="biz-card-header">
-              <span class="biz-logo">🌐 COMMERCIAL SERVICE & PRICING</span>
+              <span class="biz-logo">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.antenna"></span>
+                COMMERCIAL SERVICE & PRICING
+              </span>
               <span class="biz-badge-avail">99.9% GLOBAL</span>
             </div>
             <div class="plan-selector-chips">
@@ -793,13 +975,17 @@ onUnmounted(() => {
                 :class="{ active: selectedBizPlan.id === plan.id }"
                 @click="selectedBizPlan = plan"
               >
-                {{ plan.icon }} {{ plan.name.split(' ')[1] || 'Plan' }}
+                <span class="eng-icon-inline" v-html="getEngIcon(plan.iconType)"></span>
+                {{ plan.name.split(' ')[0] }}
               </button>
             </div>
 
             <div class="plan-details-box">
               <div class="plan-title-row">
-                <h4>{{ selectedBizPlan.icon }} {{ selectedBizPlan.name }}</h4>
+                <h4>
+                  <span class="eng-icon-inline" v-html="getEngIcon(selectedBizPlan.iconType)"></span>
+                  {{ selectedBizPlan.name }}
+                </h4>
                 <div class="plan-price-tag">
                   <strong>${{ selectedBizPlan.monthlyCost }}</strong>/mo
                   <small v-if="selectedBizPlan.hardwareCost > 0">(${{ selectedBizPlan.hardwareCost }} HW)</small>
@@ -813,15 +999,21 @@ onUnmounted(() => {
                 <div>UPTIME: <strong>{{ selectedBizPlan.availabilityGlobalPct }}%</strong></div>
               </div>
               <ul class="plan-features">
-                <li v-for="feat in selectedBizPlan.features" :key="feat">✔ {{ feat }}</li>
+                <li v-for="feat in selectedBizPlan.features" :key="feat">
+                  <span class="eng-icon-inline feat-check" v-html="SVG_ICONS.check"></span>
+                  {{ feat }}
+                </li>
               </ul>
             </div>
           </div>
 
-          <!-- 3. FINANCIAL LATENCY & ROI ARBITRAGE SIMULATOR -->
-          <div class="biz-card arbitrage-card">
+          <!-- SUB-SECTION C: FINANCIAL LATENCY & ROI ARBITRAGE SIMULATOR -->
+          <div v-if="selectedBizSubSection === 'ARBITRAGE'" class="biz-card arbitrage-card">
             <div class="biz-card-header">
-              <span class="biz-logo">📈 FINANCIAL ARBITRAGE & ROI</span>
+              <span class="biz-logo">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.metrics"></span>
+                FINANCIAL ARBITRAGE & ROI
+              </span>
               <span class="biz-badge-roi">+{{ bizArbitrage.annualRoiPct }}% ROI</span>
             </div>
             <div class="arbitrage-toggle-row">
@@ -853,10 +1045,13 @@ onUnmounted(() => {
             <p class="arb-note">{{ bizArbitrage.vacuumSpeedVsGlassAdvantage }}</p>
           </div>
 
-          <!-- 4. PLANETARY FUTURE OUTLOOK 2026 - 2030 -->
-          <div class="biz-card future-card">
+          <!-- SUB-SECTION D: PLANETARY FUTURE OUTLOOK 2026 - 2030 -->
+          <div v-if="selectedBizSubSection === 'OUTLOOK'" class="biz-card future-card">
             <div class="biz-card-header">
-              <span class="biz-logo">🔮 FUTURE OUTLOOK 2026–2030</span>
+              <span class="biz-logo">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.orbital"></span>
+                FUTURE OUTLOOK 2026–2030
+              </span>
               <span class="biz-badge-dom">DOMINANCE INDEX</span>
             </div>
             <div class="timeline-stepper">
@@ -2511,5 +2706,354 @@ onUnmounted(() => {
   border-radius: 3px;
   transition: width 0.3s ease;
 }
+
+/* Precision Engineering Vector Icons styling */
+.eng-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.eng-icon-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.eng-icon-inline svg {
+  width: 13px;
+  height: 13px;
+}
+
+.feat-check svg {
+  width: 11px;
+  height: 11px;
+  color: #22c55e;
+}
+
+/* Sub-nav navigation pills */
+.biz-subnav-pills {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.biz-subnav-btn {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.biz-subnav-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f1f5f9;
+}
+
+.biz-subnav-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* 6-Layer Coordination Matrix */
+.fab-layers-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.3rem;
+  margin: 0.5rem 0;
+}
+
+.fab-layer-cell {
+  background: rgba(2, 6, 23, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.35rem 0.45rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fab-layer-cell:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.fab-layer-cell.active {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+}
+
+.layer-cell-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.layer-tag {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.layer-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 5px #22c55e;
+}
+
+.layer-status-dot.degraded { background: #eab308; }
+.layer-status-dot.down { background: #ef4444; }
+
+.layer-cell-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 0.1rem;
+}
+
+.layer-cell-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.5rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+.layer-cell-meta .alert-count {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.active-layer-detail-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.25rem;
+}
+
+.detail-title-group strong {
+  font-size: 0.65rem;
+  color: #f8fafc;
+  display: block;
+}
+
+.facility-pill {
+  font-size: 0.5rem;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.metric-live-badge {
+  font-size: 0.52rem;
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+.detail-desc {
+  font-size: 0.55rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+  margin: 0;
+}
+
+/* SPC Alert Box */
+.spc-alert-box {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  padding: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.spc-head {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.58rem;
+  color: #f87171;
+  margin-bottom: 0.25rem;
+}
+
+.spc-pill {
+  background: rgba(239, 68, 68, 0.2);
+  border-radius: 2px;
+  padding: 0.1rem 0.25rem;
+  font-size: 0.48rem;
+  font-weight: 800;
+  margin-left: auto;
+}
+
+.spc-content {
+  font-size: 0.52rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+.highlight-val {
+  color: #f87171;
+  font-weight: 800;
+}
+
+.spc-action {
+  color: #38bdf8;
+  margin-top: 0.2rem;
+  font-size: 0.52rem;
+}
+
+/* Chip Lifecycle Journey */
+.lifecycle-card {
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.lifecycle-header {
+  font-size: 0.58rem;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.chip-picker-row {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.4rem;
+  overflow-x: auto;
+}
+
+.chip-pick-btn {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 0.5rem;
+  font-family: monospace;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip-pick-btn.active {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.journey-meta-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.2rem 0.5rem;
+  font-size: 0.52rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.3rem 0.4rem;
+  border-radius: 3px;
+  margin-bottom: 0.4rem;
+}
+
+.journey-steps-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.5rem 0;
+}
+
+.step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  opacity: 0.4;
+}
+
+.step-node.active {
+  opacity: 1;
+}
+
+.step-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+}
+
+.step-node.active .step-circle {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #00f0ff;
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+}
+
+.step-name {
+  font-size: 0.48rem;
+  color: #cbd5e1;
+}
+
+.step-connector {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 0.2rem;
+  margin-bottom: 0.7rem;
+}
+
+.chip-destination-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px dashed rgba(56, 189, 248, 0.3);
+  padding: 0.35rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.52rem;
+}
+
+.dest-label {
+  color: #94a3b8;
+  font-size: 0.48rem;
+}
+
+.in-situ-telemetry {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
 </style>
 
