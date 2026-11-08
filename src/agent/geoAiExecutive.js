@@ -199,6 +199,117 @@ export const CRITICAL_INFRASTRUCTURE_REGISTRY = [
     city: 'Cornwall',
     country: 'United Kingdom',
     notes: 'Primary transatlantic fiber gateway connecting North America to the UK and Europe.'
+  },
+
+  // ── Semiconductor & Chip Factories ────────────────────────────────────────
+  {
+    id: 'fab-tsmc-az',
+    name: 'TSMC Fab 21 Advanced Semiconductor Campus',
+    category: 'chip_factory',
+    operator: 'TSMC Arizona',
+    powerMw: 250.0,
+    lat: 33.7745,
+    lon: -112.1856,
+    alt: 1500,
+    heading: 315,
+    pitch: -52,
+    city: 'Phoenix, AZ',
+    country: 'USA',
+    notes: 'Leading-edge 3nm/2nm semiconductor wafer foundry; direct high-reliability power link.'
+  },
+  {
+    id: 'fab-intel-oh',
+    name: 'Intel Ohio MegaFab One',
+    category: 'chip_factory',
+    operator: 'Intel Foundry',
+    powerMw: 300.0,
+    lat: 40.0989,
+    lon: -82.7483,
+    alt: 1600,
+    heading: 45,
+    pitch: -50,
+    city: 'New Albany, OH',
+    country: 'USA',
+    notes: 'Silicon Heartland mega-foundry producing next-generation AI processors.'
+  },
+  {
+    id: 'fab-samsung-tx',
+    name: 'Samsung Semiconductor Mega Fab',
+    category: 'chip_factory',
+    operator: 'Samsung Electronics',
+    powerMw: 180.0,
+    lat: 30.5707,
+    lon: -97.4092,
+    alt: 1400,
+    heading: 180,
+    pitch: -50,
+    city: 'Taylor, TX',
+    country: 'USA',
+    notes: 'Advanced AI and high-performance computing logic semiconductor fabrication.'
+  },
+  {
+    id: 'fab-musk-austin',
+    name: 'Austin Research Fab (Design • Make • Test Under One Roof)',
+    category: 'chip_factory',
+    operator: 'xAI / Tesla Semiconductor Enclave',
+    powerMw: 120.0,
+    lat: 30.2223,
+    lon: -97.6171,
+    alt: 1250,
+    heading: 330,
+    pitch: -52,
+    city: 'Austin, TX',
+    country: 'USA',
+    notes: 'Vertically integrated cleanroom, lithography, and test benches under one roof. Compresses 18-month tape-out cycles to days.'
+  },
+  {
+    id: 'fab-musk-grimes',
+    name: 'Grimes County AI MegaFab (Planned Mass Production)',
+    category: 'chip_factory',
+    operator: 'xAI / SpaceX Silicon Foundry',
+    powerMw: 450.0,
+    lat: 30.5500,
+    lon: -95.9800,
+    alt: 1450,
+    heading: 45,
+    pitch: -48,
+    city: 'Grimes County, TX',
+    country: 'USA',
+    notes: 'Gigawatt-scale high-volume production fab for orbital and ground AI processors. Direct interconnection to Texas ERCOT energy corridors.'
+  },
+
+  // ── AI Computers in Orbit & Space Mesh ────────────────────────────────────
+  {
+    id: 'space-ai-leo',
+    name: 'Starlink AI Orbital Cluster Alpha (11,000+ Mesh)',
+    category: 'space_ai',
+    operator: 'SpaceX / Starlink AI',
+    powerMw: 12.0,
+    lat: 25.9972,
+    lon: -97.1561,
+    alt: 550000,
+    heading: 0,
+    pitch: -90,
+    city: 'Low Earth Orbit (550km)',
+    country: 'Orbital Domain',
+    notes: 'Space-based GPU inference clusters with 10 Terabits/s optical laser links (100x speed).'
+  },
+
+  // ── Power Plants & Basal Generation ───────────────────────────────────────
+  {
+    id: 'power-paloverde',
+    name: 'Palo Verde Generating Station (3,937 MW)',
+    category: 'power_plant',
+    operator: 'Arizona Public Service',
+    powerMw: 3937.0,
+    lat: 33.3964,
+    lon: -112.8681,
+    alt: 2600,
+    heading: 90,
+    pitch: -45,
+    city: 'Tonopah, AZ',
+    country: 'USA',
+    notes: 'Largest nuclear baseload power plant in the United States, powering Southwest AI fabs.'
   }
 ];
 
@@ -287,7 +398,7 @@ export async function runAutonomousSitrep(cameraPos = null) {
 
   const sitrepPrompt = `Generate a structured, military-style GEOSPATIAL TACTICAL SITUATION REPORT (SITREP) for:
 Location: ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°W (${mobile.detectedCountry || 'International Corridor'})
-Starlink LEO Mesh: 7,200+ Satellites, 28 Active Beams, Ping: 24ms, Direct-to-Cell Handover: ACTIVE.
+Starlink LEO Mesh: 11,000+ Satellites in Orbit, Next-Gen 10 Terabits/s Optical Laser Links (100x Bandwidth), AI Computers in Orbit: ACTIVE, Direct-to-Cell Handover: ACTIVE.
 Mobile Carriers Detected: ${mobile.carriers.map(c => `${c.name} (${c.tech}, DirectToCell: ${c.directToCellReady})`).join(', ')}.
 Nearest Hyperscale Data Center: ${nearestDatacenter.name} (${nearestDatacenter.distKm} km away, ${nearestDatacenter.powerMw} MW capacity).
 Nearest Power & Energy Generation: ${nearestEnergy.name} (${nearestEnergy.distKm} km away, ${nearestEnergy.powerMw} MW output).
@@ -325,16 +436,16 @@ Format strictly as:
   return {
     success: true,
     report: `[1. TACTICAL SITUATION & THREAT ASSESSMENT]
-Coordinates: ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°W. Airspace and maritime corridors actively correlated with bi-temporal transponder evidence. All primary nodes operational.
+Coordinates: ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°W. Airspace, maritime corridors, and semiconductor foundries correlated with bi-temporal transponder evidence. All primary defense and industrial nodes operational.
 
 [2. TELECOM & STARLINK DIRECT-TO-CELL RESILIENCE]
-Carrier Footprint: ${mobile.carriers.map(c => c.name).join(', ')}. Starlink Direct-to-Cell LEO satellite mesh established. Ground-to-satellite handover latency is 24ms with 240 Mbps downlink throughput.
+Carrier Footprint: ${mobile.carriers.map(c => c.name).join(', ')}. Starlink LEO mesh reports 11,000+ operational satellites with 10 Terabits/s optical laser cross-links (100x throughput) and active space-based AI compute clusters. Ground-to-satellite handover latency is 22ms.
 
 [3. POWER GRID & HYPERSCALE COMPUTE VULNERABILITY]
-Key Energy Node: ${nearestEnergy.name} (${nearestEnergy.powerMw} MW, ${nearestEnergy.distKm} km). Primary AI Data Center: ${nearestDatacenter.name} (${nearestDatacenter.powerMw} MW, ${nearestDatacenter.distKm} km). Substation telemetry reports nominal phase balance.
+Key Energy Node: ${nearestEnergy.name} (${nearestEnergy.powerMw} MW, ${nearestEnergy.distKm} km). Primary AI Data Center & Chip Fabs: ${nearestDatacenter.name} (${nearestDatacenter.powerMw} MW, ${nearestDatacenter.distKm} km). Substation telemetry reports nominal phase balance.
 
 [4. OPERATIONAL COMMAND RECOMMENDATIONS]
-Maintain Starlink D2C standby channel. Enable local infrastructure overlay layers (Datacenters, Dams, Subsea Cables). Continue dual-horizon evidence surveillance.`,
+Maintain Starlink D2C standby channel. Synchronize AI computers in orbit with terrestrial chip foundries and power generation grids. Continue dual-horizon evidence surveillance.`,
     model: 'SpatialForge Sovereign Local 2B (On-Device)',
     lat,
     lon,
@@ -358,10 +469,12 @@ export async function executeFindAndFly(query) {
     // Enable corresponding layer
     if (target.category === 'datacenter') {
       window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'local-datacenters' } }));
-    } else if (target.category === 'energy_dam') {
+    } else if (target.category === 'energy_dam' || target.category === 'power_plant') {
       window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'local-dams' } }));
     } else if (target.category === 'subsea_cable') {
       window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'telegeography-submarine-cables' } }));
+    } else if (target.category === 'chip_factory' || target.category === 'space_ai') {
+      window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'local-datacenters' } }));
     }
 
     flyToTarget(target.lat, target.lon, target.alt, target.heading, target.pitch);
@@ -374,6 +487,27 @@ export async function executeFindAndFly(query) {
   }
 
   // Handle generic category activations
+  if (q.includes('chip') || q.includes('fab') || q.includes('semiconductor') || q.includes('tsmc') || q.includes('intel')) {
+    window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'local-datacenters' } }));
+    const sample = CRITICAL_INFRASTRUCTURE_REGISTRY.find(i => i.category === 'chip_factory');
+    flyToTarget(sample.lat, sample.lon, sample.alt, sample.heading, sample.pitch);
+    return {
+      success: true,
+      target: sample,
+      message: `Vectoring camera to Advanced Semiconductor Foundry: ${sample.name} (${sample.city}).`
+    };
+  }
+
+  if (q.includes('space ai') || q.includes('orbit') || q.includes('11000') || q.includes('laser link')) {
+    const sample = CRITICAL_INFRASTRUCTURE_REGISTRY.find(i => i.category === 'space_ai');
+    flyToTarget(sample.lat, sample.lon, sample.alt, sample.heading, sample.pitch);
+    return {
+      success: true,
+      target: sample,
+      message: `Vectoring camera to Starlink AI Orbital Cluster (11,000+ satellites, 10 Tbps laser mesh).`
+    };
+  }
+
   if (q.includes('datacenter') || q.includes('data center')) {
     window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'local-datacenters' } }));
     const sample = CRITICAL_INFRASTRUCTURE_REGISTRY[0]; // Frankfurt FRA1
@@ -437,3 +571,4 @@ export function simulateGridOutageAndFallback(targetName = 'Frankfurt') {
     message: `GRID FAILURE SIMULATED: Primary 110kV feed lost at ${hub.name} (${hub.powerMw} MW offline). Facility on diesel UPS (48h runtime). 100% cellular voice/SMS diverted to Starlink Direct-to-Cell LEO satellite mesh.`
   };
 }
+

@@ -433,7 +433,58 @@ onUnmounted(() => {
           <div class="starlink-card">
             <div class="starlink-card-header">
               <span class="starlink-logo">🛰️ STARLINK SPACE MESH</span>
-              <span class="starlink-badge-live">LIVE LEO</span>
+              <div class="starlink-badges-group">
+                <span class="starlink-badge-11k">11,000 SATELLITES</span>
+                <span class="starlink-badge-live">LIVE LEO</span>
+              </div>
+            </div>
+
+            <!-- NEXT-GEN 100x OPTICAL LASER LINK STATS -->
+            <div class="starlink-laser-banner">
+              <div class="laser-today">
+                <span class="laser-lbl">TODAY:</span>
+                <strong class="laser-val">≈ 100 Gbps</strong>
+              </div>
+              <div class="laser-indicator">
+                <div class="laser-beam-anim"></div>
+                <span class="laser-mult">100× SPEED</span>
+              </div>
+              <div class="laser-nextgen">
+                <span class="laser-lbl">NEXT GEN:</span>
+                <strong class="laser-val highlight-green">10 Terabits/s</strong>
+              </div>
+            </div>
+
+            <!-- ORBITAL AI & INDUSTRIAL INFRASTRUCTURE CROSS-LINKS -->
+            <div class="infrastructure-matrix-chips">
+              <div class="infra-chip active">
+                <span class="infra-icon">🛰️</span>
+                <div class="infra-text">
+                  <strong>STARLINK</strong>
+                  <small>11,000+ Active</small>
+                </div>
+              </div>
+              <div class="infra-chip active">
+                <span class="infra-icon">🧠</span>
+                <div class="infra-text">
+                  <strong>AI COMPUTERS IN ORBIT</strong>
+                  <small>GPU Inference</small>
+                </div>
+              </div>
+              <div class="infra-chip">
+                <span class="infra-icon">🏭</span>
+                <div class="infra-text">
+                  <strong>CHIP FACTORIES</strong>
+                  <small>TSMC • Intel • Samsung</small>
+                </div>
+              </div>
+              <div class="infra-chip">
+                <span class="infra-icon">⚡</span>
+                <div class="infra-text">
+                  <strong>POWER PLANTS</strong>
+                  <small>Palo Verde • Hoover</small>
+                </div>
+              </div>
             </div>
 
             <div class="starlink-metrics">
@@ -449,6 +500,18 @@ onUnmounted(() => {
                 <span class="metric-title">UPLINK</span>
                 <strong class="metric-num">{{ activeTheater.uplinkMbps }} Mbps</strong>
               </div>
+            </div>
+
+            <!-- MECHAZILLA TOWER CATCH STATUS -->
+            <div class="mechazilla-quick-card" v-if="telemetry.booster.caught || missionTimeS >= 400">
+              <div class="mechazilla-quick-head">
+                <span class="tower-icon">🏗️</span>
+                <strong>THE REAL TOWER: MECHAZILLA</strong>
+                <span class="catch-pill">ONCE AN HOUR · MUSK</span>
+              </div>
+              <p class="tower-desc">
+                <strong>BOOSTER CATCH:</strong> The arms close, pins rest on the arms above launch mount. Re-fly cadence: once an hour in principle.
+              </p>
             </div>
 
             <div class="theater-select-group">
@@ -1222,12 +1285,161 @@ onUnmounted(() => {
   color: #00ffff;
 }
 
+.starlink-badges-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.starlink-badge-11k {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: rgba(163, 230, 53, 0.2);
+  color: #a3e635;
+  border: 1px solid rgba(163, 230, 53, 0.4);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
 .starlink-badge-live {
   font-size: 0.6rem;
   background: rgba(0, 255, 255, 0.15);
   color: #00ffff;
   padding: 0.15rem 0.35rem;
   border-radius: 3px;
+}
+
+.starlink-laser-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(163, 230, 53, 0.3);
+  border-radius: 4px;
+  padding: 0.45rem 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.laser-today, .laser-nextgen {
+  display: flex;
+  flex-direction: column;
+}
+
+.laser-lbl {
+  font-size: 0.55rem;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.laser-val {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.highlight-green {
+  color: #a3e635 !important;
+  text-shadow: 0 0 8px rgba(163, 230, 53, 0.5);
+}
+
+.laser-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.laser-beam-anim {
+  width: 48px;
+  height: 2px;
+  background: #a3e635;
+  box-shadow: 0 0 6px #a3e635;
+  border-radius: 1px;
+}
+
+.laser-mult {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #a3e635;
+}
+
+.infrastructure-matrix-chips {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.infra-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(2, 6, 23, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.3rem 0.45rem;
+}
+
+.infra-chip.active {
+  border-color: rgba(0, 255, 255, 0.3);
+  background: rgba(6, 25, 45, 0.75);
+}
+
+.infra-icon {
+  font-size: 0.8rem;
+}
+
+.infra-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.infra-text strong {
+  font-size: 0.58rem;
+  color: #f1f5f9;
+  line-height: 1.1;
+}
+
+.infra-text small {
+  font-size: 0.52rem;
+  color: #94a3b8;
+}
+
+.mechazilla-quick-card {
+  background: rgba(20, 15, 5, 0.75);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 4px;
+  padding: 0.45rem 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.mechazilla-quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.mechazilla-quick-head strong {
+  font-size: 0.65rem;
+  color: #fbbf24;
+}
+
+.catch-pill {
+  font-size: 0.55rem;
+  font-weight: 700;
+  background: rgba(163, 230, 53, 0.2);
+  color: #a3e635;
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+.tower-desc {
+  font-size: 0.58rem;
+  color: #cbd5e1;
+  line-height: 1.3;
+  margin: 0;
 }
 
 .starlink-metrics {
