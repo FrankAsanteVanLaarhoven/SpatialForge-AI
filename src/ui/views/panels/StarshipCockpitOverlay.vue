@@ -772,6 +772,10 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.3rem;
   overflow-x: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  scrollbar-width: thin;
+  padding: 0.1rem 0.25rem;
 }
 
 .milestone-chip {
@@ -811,6 +815,10 @@ onUnmounted(() => {
   font-size: 1.4rem;
   cursor: pointer;
   line-height: 1;
+  flex-shrink: 0;
+  margin-left: 0.6rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
 }
 
 .starship-close-btn:hover {
