@@ -33,6 +33,14 @@ import {
   LAYER_DEFINITIONS,
   SOVEREIGN_CHIP_FAMILIES,
 } from '../../../layers/starship/terraFabBusinessIntelligence.js';
+import {
+  sovereignRedis,
+  EMPIRICAL_NEWS_FEED,
+  ENTERPRISE_QUERY_TEMPLATES,
+  evaluateEnterpriseQuery,
+  generateExecutiveReport,
+  ingestUploadedReport,
+} from '../../../layers/starship/enterpriseDecisionEngine.js';
 import { SVG_ICONS, getEngIcon } from '../../icons/engineeringIcons.js';
 
 const props = defineProps({
@@ -62,8 +70,52 @@ const fabEngineSummary = ref(sovereignFabEngine.getLayerHealthSummary());
 const selectedFabLayerKey = ref('L3');
 const selectedFabLayer = computed(() => LAYER_DEFINITIONS[selectedFabLayerKey.value]);
 const selectedFabChip = ref(fabEngineSummary.value.chipInventory[0]);
-const selectedBizSubSection = ref('FAB_COORDINATION'); // 'FAB_COORDINATION' | 'COMMERCIAL_PLANS' | 'ARBITRAGE' | 'OUTLOOK'
+const selectedBizSubSection = ref('DECISION_ENGINE'); // Default to Enterprise Decision Hub & Reports
 let fabUnsub = null;
+
+// Enterprise Decision Engine & Report Hub State
+const enterpriseQueryInput = ref('');
+const activeDecisionResult = ref(null);
+const redisCacheStatus = ref(sovereignRedis.getStatus());
+const isEvaluatingQuery = ref(false);
+const uploadStatusMsg = ref('');
+const fileInputRef = ref(null);
+
+function handleRunEnterpriseQuery(text) {
+  if (text) enterpriseQueryInput.value = text;
+  if (!enterpriseQueryInput.value) return;
+  isEvaluatingQuery.value = true;
+  setTimeout(() => {
+    activeDecisionResult.value = evaluateEnterpriseQuery(enterpriseQueryInput.value);
+    redisCacheStatus.value = sovereignRedis.getStatus();
+    isEvaluatingQuery.value = false;
+  }, 350);
+}
+
+function handleDownloadReport(format) {
+  const rep = generateExecutiveReport(format, selectedArbitrageScenario.value);
+  const blob = new Blob([rep.content], { type: rep.mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = rep.filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function handleFileUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const res = await ingestUploadedReport(file);
+    uploadStatusMsg.value = res.summary;
+    redisCacheStatus.value = sovereignRedis.getStatus();
+  } catch (err) {
+    uploadStatusMsg.value = `Upload Error: ${err.message}`;
+  }
+}
 
 onMounted(() => {
   fabUnsub = sovereignFabEngine.subscribe((updatedSummary) => {
@@ -769,6 +821,14 @@ onUnmounted(() => {
           <!-- NAVIGATION SUB-HEADER PILLS -->
           <div class="biz-subnav-pills">
             <button
+              class="biz-subnav-btn highlight-gold"
+              :class="{ active: selectedBizSubSection === 'DECISION_ENGINE' }"
+              @click="selectedBizSubSection = 'DECISION_ENGINE'"
+            >
+              <span class="eng-icon-inline" v-html="SVG_ICONS.metrics"></span>
+              DECISION ENGINE & REPORTS
+            </button>
+            <button
               class="biz-subnav-btn"
               :class="{ active: selectedBizSubSection === 'FAB_COORDINATION' }"
               @click="selectedBizSubSection = 'FAB_COORDINATION'"
@@ -800,6 +860,160 @@ onUnmounted(() => {
               <span class="eng-icon-inline" v-html="SVG_ICONS.orbital"></span>
               2026-2030 OUTLOOK
             </button>
+          </div>
+
+                    <!-- SUB-SECTION 0: ENTERPRISE DECISION HUB & REPORTS -->
+          <div v-if="selectedBizSubSection === 'DECISION_ENGINE'" class="biz-card decision-hub-card">
+            <div class="biz-card-header">
+              <span class="biz-logo">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.metrics"></span>
+                EMPIRICAL DECISION HUB & REPORT ARCHIVE
+              </span>
+              <span class="biz-badge-special">REDIS 7.2 ENCLAVE</span>
+            </div>
+            <p class="biz-desc">
+              Empirical decision-making engine synthesizing real-time news feeds, Sovereign Redis telemetry cache, and Texas-LEO fab metrics. Download executive dossiers or upload external datasets.
+            </p>
+
+            <!-- 1. REPORT DOWNLOAD & UPLOAD ACTION BAR -->
+            <div class="report-actions-panel">
+              <div class="report-download-group">
+                <span class="action-label">DOWNLOAD EXECUTIVE DOSSIER:</span>
+                <div class="download-btn-row">
+                  <button class="report-dl-btn json" @click="handleDownloadReport('json')" title="Download full empirical dataset as JSON">
+                    <span class="eng-icon-inline" v-html="SVG_ICONS.package"></span> EXPORT JSON DATASET
+                  </button>
+                  <button class="report-dl-btn md" @click="handleDownloadReport('markdown')" title="Download executive briefing dossier as Markdown">
+                    <span class="eng-icon-inline" v-html="SVG_ICONS.business"></span> EXPORT MARKDOWN DOSSIER
+                  </button>
+                </div>
+              </div>
+
+              <!-- UPLOAD FILE DROPZONE -->
+              <div class="report-upload-group">
+                <span class="action-label">INGEST ENTERPRISE REPORT / DATASET:</span>
+                <div class="upload-dropzone" @click="fileInputRef?.click()">
+                  <input
+                    type="file"
+                    ref="fileInputRef"
+                    class="hidden-file-input"
+                    accept=".json,.csv,.txt,.geojson"
+                    @change="handleFileUpload"
+                  />
+                  <span class="eng-icon-inline" v-html="SVG_ICONS.chip"></span>
+                  <span>Click or drag corporate brief (.json, .csv, .geojson)</span>
+                </div>
+                <div v-if="uploadStatusMsg" class="upload-feedback-pill">
+                  {{ uploadStatusMsg }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. ENTERPRISE QUERY & INFORMATION REQUEST CONSOLE -->
+            <div class="decision-query-box">
+              <div class="query-box-head">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.search"></span>
+                <strong>EMPIRICAL INFORMATION REQUEST & CORPORATE INQUIRY</strong>
+              </div>
+              <div class="query-input-row">
+                <input
+                  type="text"
+                  class="decision-input"
+                  placeholder="Ask corporate inquiry (e.g. Evaluate vacuum laser vs subsea fiber risk...)"
+                  v-model="enterpriseQueryInput"
+                  @keydown.enter="handleRunEnterpriseQuery(enterpriseQueryInput)"
+                />
+                <button
+                  class="decision-run-btn"
+                  :disabled="isEvaluatingQuery"
+                  @click="handleRunEnterpriseQuery(enterpriseQueryInput)"
+                >
+                  {{ isEvaluatingQuery ? 'ANALYZING...' : 'RESOLVE' }}
+                </button>
+              </div>
+
+              <!-- TEMPLATE INQUIRIES -->
+              <div class="query-template-chips">
+                <button
+                  v-for="tmpl in ENTERPRISE_QUERY_TEMPLATES"
+                  :key="tmpl.id"
+                  class="query-chip"
+                  @click="handleRunEnterpriseQuery(tmpl.text)"
+                >
+                  {{ tmpl.label }}
+                </button>
+              </div>
+
+              <!-- QUERY RESULT OUTPUT MATRIX -->
+              <div v-if="activeDecisionResult" class="decision-result-matrix">
+                <div class="result-header-row">
+                  <div>
+                    <span class="res-sub">SCENARIO:</span>
+                    <strong>{{ activeDecisionResult.scenario }}</strong>
+                  </div>
+                  <span class="risk-badge" :class="activeDecisionResult.riskRating.toLowerCase()">
+                    {{ activeDecisionResult.riskRating }}
+                  </span>
+                </div>
+
+                <div class="recommendation-block">
+                  <div class="rec-title">STRATEGIC RECOMMENDATION:</div>
+                  <p>{{ activeDecisionResult.recommendation }}</p>
+                </div>
+
+                <div class="evidence-grid">
+                  <div v-for="ev in activeDecisionResult.evidenceData" :key="ev.label" class="evidence-item">
+                    <small>{{ ev.label }}</small>
+                    <strong>{{ ev.value }}</strong>
+                  </div>
+                </div>
+
+                <div class="merkle-proof-row">
+                  <span>MERKLE ROOT HASH:</span>
+                  <code>{{ activeDecisionResult.cryptographicProof }}</code>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. REAL-WORLD NEWS WIRE SIGNALS -->
+            <div class="news-wire-box">
+              <div class="news-head">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.antenna"></span>
+                <strong>REAL-TIME EMPIRICAL NEWS WIRE & SENSORS</strong>
+                <span class="news-count-pill">{{ EMPIRICAL_NEWS_FEED.length }} SIGNALS</span>
+              </div>
+              <div class="news-stream">
+                <div v-for="news in EMPIRICAL_NEWS_FEED" :key="news.id" class="news-item">
+                  <div class="news-top">
+                    <span class="news-sev" :class="news.severity.toLowerCase()">{{ news.severity }}</span>
+                    <span class="news-time">{{ news.timestamp }}</span>
+                  </div>
+                  <strong class="news-title">{{ news.headline }}</strong>
+                  <p class="news-impact"><strong>EMPIRICAL IMPACT:</strong> {{ news.empiricalImpact }}</p>
+                  <div class="news-action"><strong>ACTION:</strong> {{ news.recommendedAction }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. SOVEREIGN REDIS ENCLAVE TELEMETRY STATUS -->
+            <div class="redis-status-strip">
+              <div class="redis-stat">
+                <small>CACHE ENGINE</small>
+                <strong>{{ redisCacheStatus.engine }}</strong>
+              </div>
+              <div class="redis-stat">
+                <small>ENDPOINT</small>
+                <strong>{{ redisCacheStatus.endpoint }}</strong>
+              </div>
+              <div class="redis-stat">
+                <small>ACTIVE KEYS</small>
+                <strong>{{ redisCacheStatus.totalKeys }}</strong>
+              </div>
+              <div class="redis-stat">
+                <small>HIT RATIO</small>
+                <strong class="green-text">{{ redisCacheStatus.hitRatioPct }}%</strong>
+              </div>
+            </div>
           </div>
 
           <!-- SUB-SECTION A: 6-LAYER SOVEREIGN COORDINATION FABRIC -->
@@ -3053,6 +3267,401 @@ onUnmounted(() => {
   margin-top: 0.25rem;
   color: #38bdf8;
   font-family: monospace;
+}
+
+
+/* Decision Hub & Reports Styling */
+.decision-hub-card {
+  border-color: rgba(250, 204, 21, 0.3) !important;
+}
+
+.biz-subnav-btn.highlight-gold {
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.4);
+}
+
+.biz-subnav-btn.highlight-gold.active {
+  background: rgba(250, 204, 21, 0.18);
+  border-color: #facc15;
+  color: #fef08a;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.25);
+}
+
+.report-actions-panel {
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.action-label {
+  font-size: 0.48rem;
+  color: #94a3b8;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.download-btn-row {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.report-dl-btn {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  font-size: 0.52rem;
+  font-weight: 700;
+  padding: 0.3rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.report-dl-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #f8fafc;
+}
+
+.report-dl-btn.md {
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.report-dl-btn.md:hover {
+  background: rgba(168, 85, 247, 0.2);
+  color: #f8fafc;
+}
+
+.upload-dropzone {
+  border: 1px dashed rgba(250, 204, 21, 0.4);
+  background: rgba(250, 204, 21, 0.04);
+  border-radius: 4px;
+  padding: 0.4rem;
+  text-align: center;
+  font-size: 0.5rem;
+  color: #fef08a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.upload-dropzone:hover {
+  background: rgba(250, 204, 21, 0.1);
+  border-color: #facc15;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.upload-feedback-pill {
+  font-size: 0.5rem;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  margin-top: 0.2rem;
+  font-family: monospace;
+}
+
+/* Decision Query Box */
+.decision-query-box {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.query-box-head {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.55rem;
+  color: #f8fafc;
+  margin-bottom: 0.3rem;
+}
+
+.query-input-row {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.decision-input {
+  flex: 1;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  font-size: 0.55rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 3px;
+  outline: none;
+}
+
+.decision-input:focus {
+  border-color: #00f0ff;
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+}
+
+.decision-run-btn {
+  background: rgba(0, 240, 255, 0.25);
+  border: 1px solid #00f0ff;
+  color: #00f0ff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 0 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.decision-run-btn:hover {
+  background: #00f0ff;
+  color: #020617;
+}
+
+.query-template-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.4rem;
+}
+
+.query-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 0.48rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.query-chip:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+/* Query Result Matrix */
+.decision-result-matrix {
+  background: rgba(2, 6, 23, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  padding: 0.45rem;
+  margin-top: 0.4rem;
+}
+
+.result-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.52rem;
+  margin-bottom: 0.3rem;
+}
+
+.res-sub {
+  color: #94a3b8;
+  margin-right: 4px;
+}
+
+.risk-badge {
+  font-size: 0.48rem;
+  font-weight: 800;
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+.risk-badge.high_opportunity { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid #22c55e; }
+.risk-badge.critical_infrastructure { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+.risk-badge.moderate { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid #eab308; }
+
+.recommendation-block {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid #00f0ff;
+  padding: 0.3rem 0.45rem;
+  border-radius: 0 3px 3px 0;
+  margin-bottom: 0.4rem;
+}
+
+.rec-title {
+  font-size: 0.48rem;
+  font-weight: 800;
+  color: #00f0ff;
+  margin-bottom: 0.15rem;
+}
+
+.recommendation-block p {
+  font-size: 0.52rem;
+  color: #f1f5f9;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.3rem;
+}
+
+.evidence-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 0.35rem;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+}
+
+.evidence-item small {
+  font-size: 0.46rem;
+  color: #94a3b8;
+}
+
+.evidence-item strong {
+  font-size: 0.52rem;
+  color: #e2e8f0;
+}
+
+.merkle-proof-row {
+  display: flex;
+  gap: 0.3rem;
+  font-size: 0.46rem;
+  color: #64748b;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 0.25rem;
+}
+
+.merkle-proof-row code {
+  color: #a855f7;
+  font-size: 0.44rem;
+}
+
+/* News Wire Box */
+.news-wire-box {
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.news-head {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.55rem;
+  color: #f8fafc;
+  margin-bottom: 0.35rem;
+}
+
+.news-count-pill {
+  margin-left: auto;
+  font-size: 0.48rem;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.news-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.news-item {
+  background: rgba(15, 23, 42, 0.7);
+  border-left: 2px solid #38bdf8;
+  border-radius: 0 3px 3px 0;
+  padding: 0.3rem 0.4rem;
+}
+
+.news-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.15rem;
+}
+
+.news-sev {
+  font-size: 0.45rem;
+  font-weight: 800;
+  padding: 0.05rem 0.25rem;
+  border-radius: 2px;
+}
+
+.news-sev.high_impact { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.news-sev.strategic_positive { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+.news-sev.critical_risk { background: rgba(234, 179, 8, 0.2); color: #facc15; }
+.news-sev.transformative { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+
+.news-time {
+  font-size: 0.46rem;
+  color: #64748b;
+}
+
+.news-title {
+  font-size: 0.54rem;
+  color: #f8fafc;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.news-impact {
+  font-size: 0.48rem;
+  color: #cbd5e1;
+  margin: 0 0 0.15rem 0;
+  line-height: 1.3;
+}
+
+.news-action {
+  font-size: 0.48rem;
+  color: #38bdf8;
+}
+
+/* Redis Status Strip */
+.redis-status-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  padding: 0.3rem 0.4rem;
+}
+
+.redis-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.redis-stat small {
+  font-size: 0.44rem;
+  color: #64748b;
+}
+
+.redis-stat strong {
+  font-size: 0.5rem;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 </style>
