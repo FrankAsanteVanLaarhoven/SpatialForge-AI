@@ -28,6 +28,12 @@ When an operator issues a navigation or system command, analyze their intent and
 [ACTION: START_RECORDING] - For starting mission screen recording
 [ACTION: TOGGLE_AIRGAP] - For toggling touchless hand/finger gesture control
 [ACTION: EVALUATE_ANOMALY] - For kinematic teleportation and spoofing audit
+[ACTION: EMULATE_STARSHIP] - For SpaceX Starship Flight 5/6 Mechazilla catch & Starlink constellation emulation
+[ACTION: TOGGLE_DATACENTERS] - For enabling 4,300+ global hyperscale data centers layer
+[ACTION: TOGGLE_DAMS] - For enabling 500+ hydroelectric dams & power generating stations layer
+[ACTION: TOGGLE_CABLES] - For enabling global subsea fiber-optic cables layer
+[ACTION: RUN_SITREP] - For running autonomous tactical situation report
+[ACTION: SIMULATE_GRID_FAILURE] - For testing power grid blackout and Starlink Direct-to-Cell fallback
 
 Respond concisely with tactical military-grade clarity.`;
 
@@ -64,6 +70,24 @@ export function dispatchTacticalAction(actionTag) {
       break;
     case 'TOGGLE_AIRGAP':
       window.dispatchEvent(new CustomEvent('gev:toggle-airgap-gesture'));
+      break;
+    case 'EMULATE_STARSHIP':
+      window.dispatchEvent(new CustomEvent('gev:toggle-starship-cockpit'));
+      break;
+    case 'TOGGLE_DATACENTERS':
+      window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'local-datacenters' } }));
+      break;
+    case 'TOGGLE_DAMS':
+      window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'local-dams' } }));
+      break;
+    case 'TOGGLE_CABLES':
+      window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: 'telegeography-submarine-cables' } }));
+      break;
+    case 'RUN_SITREP':
+      window.dispatchEvent(new CustomEvent('gev:trigger-ai-sitrep'));
+      break;
+    case 'SIMULATE_GRID_FAILURE':
+      window.dispatchEvent(new CustomEvent('gev:simulate-grid-failure'));
       break;
     default:
       break;

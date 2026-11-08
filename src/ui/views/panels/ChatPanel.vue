@@ -17,6 +17,19 @@ const list = ref(null);
 const layerSelect = ref(null);
 const layerChoice = ref('');
 
+const selectedModel = ref(
+  (typeof localStorage !== 'undefined' && (localStorage.getItem('gev_chat_model') || localStorage.getItem('gev_selected_model'))) ||
+  'anthropic/claude-3.5-sonnet'
+);
+function onModelChange(e) {
+  const val = e.target.value;
+  selectedModel.value = val;
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('gev_chat_model', val);
+    localStorage.setItem('gev_selected_model', val);
+  }
+}
+
 // The input holds what the person types until its owner writes it (history
 // recall, a suggestion, clearing after send): only then is it replaced.
 const vOwnedDraft = {
@@ -58,7 +71,14 @@ function attachLayer() {
   if (value) emit('chat-layer', value);
 }
 
-const quickPrompts = () => [t('Fly to Tokyo'), t('Show live flights')];
+const quickPrompts = () => [
+  t('Fly to Tokyo'),
+  t('Show live flights'),
+  t('Run AI Situation Briefing'),
+  t('Show 4,300+ Data Centers'),
+  t('Show Hydro Dams & Power Plants'),
+  t('Check Starlink & Mobile Networks in Ukraine')
+];
 </script>
 
 <template>
@@ -71,6 +91,20 @@ const quickPrompts = () => [t('Fly to Tokyo'), t('Show live flights')];
         <button id="gev-chat-close" type="button" :aria-label="t('Close chat')" @click="emit('chat-close')">×</button>
       </div>
     </header>
+    <div class="gev-chat-model-bar">
+      <span class="gev-chat-model-label">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        AI MODEL
+      </span>
+      <select class="gev-chat-model-select" :value="selectedModel" @change="onModelChange" :title="t('Select AI Model')">
+        <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (OpenRouter)</option>
+        <option value="deepseek/deepseek-r1">DeepSeek R1 (OpenRouter)</option>
+        <option value="openai/gpt-4o">GPT-4o (OpenRouter)</option>
+        <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (OpenRouter)</option>
+        <option value="mistralai/mistral-large-2411">Mistral Large (OpenRouter)</option>
+        <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (OpenRouter)</option>
+      </select>
+    </div>
     <div id="gev-chat-messages" ref="list" role="log" :aria-label="t('Conversation')" aria-live="polite" :aria-busy="props.view.chat.busy || props.view.chat.revealing ? 'true' : undefined" @scroll.passive="onListScroll">
       <div id="gev-chat-empty" :hidden="!props.view.chat.empty">
         <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><ellipse cx="12" cy="12" rx="4" ry="10"></ellipse><path d="M2 12h20"></path></svg>

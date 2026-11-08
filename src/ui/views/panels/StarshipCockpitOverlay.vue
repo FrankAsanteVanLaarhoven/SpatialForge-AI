@@ -17,6 +17,13 @@ import {
   MEDIA_PROVIDERS,
 } from '../../../layers/starship/mobileMediaRadar.js';
 import { createStarshipScene } from '../../../layers/starship/starshipScene.js';
+import {
+  runAutonomousSitrep,
+  executeFindAndFly,
+  simulateGridOutageAndFallback,
+  CRITICAL_INFRASTRUCTURE_REGISTRY,
+  flyToTarget,
+} from '../../../agent/geoAiExecutive.js';
 
 const props = defineProps({
   visible: { type: Boolean, default: true },
@@ -137,6 +144,52 @@ function openMedia(url) {
 
 function toggleLayer(layerId) {
   window.dispatchEvent(new CustomEvent('gev:enable-layer', { detail: { id: layerId } }));
+}
+
+// AI Situational Intelligence & Infrastructure State
+const sitrepData = ref(null);
+const isGeneratingSitrep = ref(false);
+const searchQuery = ref('');
+const searchFeedback = ref('');
+const gridSimulationResult = ref(null);
+
+async function handleGenerateSitrep() {
+  isGeneratingSitrep.value = true;
+  sitrepData.value = null;
+  try {
+    sitrepData.value = await runAutonomousSitrep(telemetry.value.ship);
+  } catch (err) {
+    console.error('Sitrep error:', err);
+  } finally {
+    isGeneratingSitrep.value = false;
+  }
+}
+
+async function handleSearch() {
+  if (!searchQuery.value) return;
+  const res = await executeFindAndFly(searchQuery.value);
+  searchFeedback.value = res.message;
+  if (res.target) {
+    searchQuery.value = res.target.name;
+  }
+  setTimeout(() => { searchFeedback.value = ''; }, 5000);
+}
+
+function handleFlyTo(item) {
+  if (item.category === 'datacenter') {
+    toggleLayer('local-datacenters');
+  } else if (item.category === 'energy_dam') {
+    toggleLayer('local-dams');
+  } else if (item.category === 'subsea_cable') {
+    toggleLayer('telegeography-submarine-cables');
+  }
+  flyToTarget(item.lat, item.lon, item.alt, item.heading, item.pitch);
+  searchFeedback.value = `Vectoring 3D camera to ${item.name}`;
+  setTimeout(() => { searchFeedback.value = ''; }, 4000);
+}
+
+function handleSimulateGridFailure(name = 'Frankfurt') {
+  gridSimulationResult.value = simulateGridOutageAndFallback(name);
 }
 
 onMounted(() => {
@@ -434,8 +487,72 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- TAB 2: CRITICAL INFRASTRUCTURE & ENERGY SOURCES -->
+        <!-- TAB 2: CRITICAL INFRASTRUCTURE, ENERGY SOURCES & AI EXECUTIVES -->
         <div v-if="activeTab === 'infra'" class="tab-content">
+          <!-- AI AUTONOMOUS SITREP ENGINE -->
+          <div class="infra-card ai-sitrep-card">
+            <div class="infra-card-header">
+              <span class="infra-title">🤖 AI AUTONOMOUS SITUATION BRIEFING</span>
+              <span class="infra-badge-count ai-badge">REAL-TIME INTEL</span>
+            </div>
+            <p class="infra-desc">Multi-model neural assessment synthesizing current coordinates, active Starlink LEO beams, mobile carrier mesh, and critical compute nodes.</p>
+            <div class="infra-action-row">
+              <button
+                class="infra-toggle-btn ai-btn"
+                type="button"
+                :disabled="isGeneratingSitrep"
+                @click="handleGenerateSitrep"
+              >
+                {{ isGeneratingSitrep ? '⚡ ANALYZING SENSOR MATRIX...' : '⚡ RUN AUTONOMOUS AI SITREP' }}
+              </button>
+            </div>
+
+            <!-- SITREP REPORT MODAL / READOUT -->
+            <div v-if="sitrepData" class="sitrep-report-box">
+              <div class="sitrep-meta">
+                <span class="sitrep-model">MODEL: {{ sitrepData.model }}</span>
+                <span class="sitrep-time">COORD: {{ sitrepData.lat.toFixed(2) }}°, {{ sitrepData.lon.toFixed(2) }}°</span>
+              </div>
+              <pre class="sitrep-text">{{ sitrepData.report }}</pre>
+            </div>
+          </div>
+
+          <!-- NATURAL LANGUAGE "FIND & FLY" SPATIAL ENGINE -->
+          <div class="infra-card">
+            <div class="infra-card-header">
+              <span class="infra-title">🎯 NATURAL LANGUAGE "FIND & FLY"</span>
+              <span class="infra-badge-count">SEMANTIC SEARCH</span>
+            </div>
+            <div class="infra-search-row">
+              <input
+                type="text"
+                class="infra-search-input"
+                placeholder="Find datacenter, dam, cable, city..."
+                v-model="searchQuery"
+                @keydown.enter="handleSearch"
+              />
+              <button class="infra-search-btn" type="button" @click="handleSearch">FLY ↗</button>
+            </div>
+            <p v-if="searchFeedback" class="search-feedback-msg">{{ searchFeedback }}</p>
+            <div class="quick-chips-row">
+              <button
+                v-for="chip in [
+                  { label: 'FRA1 (77 MW)', query: 'FRA1' },
+                  { label: 'Ashburn AWS', query: 'Ashburn' },
+                  { label: 'Google Inzai', query: 'Inzai' },
+                  { label: 'Dnipro Hydro', query: 'Dnipro' },
+                  { label: 'Hoover Dam', query: 'Hoover' },
+                  { label: 'Marseille Cables', query: 'Marseille' }
+                ]"
+                :key="chip.label"
+                class="chip-btn"
+                @click="searchQuery = chip.query; handleSearch()"
+              >
+                {{ chip.label }}
+              </button>
+            </div>
+          </div>
+
           <!-- DATACENTER LAYER SECTION -->
           <div class="infra-card">
             <div class="infra-card-header">
@@ -449,20 +566,16 @@ onUnmounted(() => {
               </button>
             </div>
             <div class="infra-sample-list">
-              <div class="infra-sample-item">
+              <div
+                v-for="item in CRITICAL_INFRASTRUCTURE_REGISTRY.filter(i => i.category === 'datacenter').slice(0, 3)"
+                :key="item.id"
+                class="infra-sample-item clickable"
+                @click="handleFlyTo(item)"
+                title="Click to fly 3D camera to this data center"
+              >
                 <span class="sample-dot blue"></span>
-                <span class="sample-name">Digital Realty FRA1 (77.4 MW)</span>
-                <span class="sample-loc">Frankfurt, DE</span>
-              </div>
-              <div class="infra-sample-item">
-                <span class="sample-dot blue"></span>
-                <span class="sample-name">Digital Realty MRS3 (24.0 MW)</span>
-                <span class="sample-loc">Marseille, FR</span>
-              </div>
-              <div class="infra-sample-item">
-                <span class="sample-dot blue"></span>
-                <span class="sample-name">Google Inzai Hyperscale Campus</span>
-                <span class="sample-loc">Chiba, JP</span>
+                <span class="sample-name">{{ item.name }}</span>
+                <span class="sample-loc">{{ item.city }} ↗</span>
               </div>
             </div>
           </div>
@@ -483,15 +596,38 @@ onUnmounted(() => {
               </button>
             </div>
             <div class="infra-sample-list">
-              <div class="infra-sample-item">
-                <span class="sample-dot green"></span>
-                <span class="sample-name">HE Podlubnik Hydro (330 KW)</span>
-                <span class="sample-loc">Slovenia</span>
+              <div
+                v-for="item in CRITICAL_INFRASTRUCTURE_REGISTRY.filter(i => i.category === 'energy_dam' || i.category === 'subsea_cable').slice(0, 3)"
+                :key="item.id"
+                class="infra-sample-item clickable"
+                @click="handleFlyTo(item)"
+                title="Click to fly 3D camera to this energy/cable facility"
+              >
+                <span class="sample-dot" :class="item.category === 'energy_dam' ? 'green' : 'purple'"></span>
+                <span class="sample-name">{{ item.name }}</span>
+                <span class="sample-loc">{{ item.city }} ↗</span>
               </div>
-              <div class="infra-sample-item">
-                <span class="sample-dot green"></span>
-                <span class="sample-name">FIRMS Radiative Power Radar</span>
-                <span class="sample-loc">Global Satellite MW</span>
+            </div>
+          </div>
+
+          <!-- GRID BLACKOUT & SATELLITE FAILOVER SIMULATOR -->
+          <div class="infra-card">
+            <div class="infra-card-header">
+              <span class="infra-title">💥 GRID OUTAGE & D2C FAILOVER SIMULATOR</span>
+              <span class="infra-badge-count danger">STRESS TEST</span>
+            </div>
+            <p class="infra-desc">Simulates loss of 110kV transmission feed: models data center UPS depletion and autonomous handover to Starlink Direct-to-Cell LEO mesh.</p>
+            <div class="infra-action-row">
+              <button class="infra-toggle-btn danger-btn" type="button" @click="handleSimulateGridFailure('Frankfurt')">
+                ⚠️ SIMULATE 110kV GRID BLACKOUT
+              </button>
+            </div>
+            <div v-if="gridSimulationResult" class="simulation-result-box">
+              <strong class="sim-alert">⚡ {{ gridSimulationResult.message }}</strong>
+              <div class="sim-badges">
+                <span class="sim-pill">POWER CUT: {{ gridSimulationResult.powerLostMw }} MW</span>
+                <span class="sim-pill">UPS RUNTIME: {{ gridSimulationResult.generatorBatteryReserveHours }}H</span>
+                <span class="sim-pill active">D2C SATELLITE: ACTIVE</span>
               </div>
             </div>
           </div>
@@ -1430,6 +1566,201 @@ onUnmounted(() => {
 .sample-loc {
   color: #64748b;
   font-size: 0.55rem;
+}
+
+/* AI SITREP & SEARCH STYLES */
+.ai-sitrep-card {
+  border-color: rgba(0, 246, 255, 0.45);
+  box-shadow: 0 0 16px rgba(0, 246, 255, 0.12);
+}
+
+.ai-badge {
+  background: rgba(0, 246, 255, 0.25) !important;
+  color: #00ffff !important;
+  border: 1px solid rgba(0, 246, 255, 0.4);
+}
+
+.infra-toggle-btn.ai-btn {
+  background: linear-gradient(135deg, rgba(0, 246, 255, 0.2), rgba(168, 85, 247, 0.25));
+  border-color: #00f6ff;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(0, 246, 255, 0.3);
+  font-size: 0.65rem;
+  padding: 0.5rem;
+}
+
+.infra-toggle-btn.ai-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(0, 246, 255, 0.4), rgba(168, 85, 247, 0.45));
+  box-shadow: 0 0 20px rgba(0, 246, 255, 0.6);
+}
+
+.infra-toggle-btn.ai-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.sitrep-report-box {
+  margin-top: 0.6rem;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(0, 246, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.6rem;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.sitrep-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.58rem;
+  color: #00ffff;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.sitrep-text {
+  font-family: inherit;
+  font-size: 0.58rem;
+  line-height: 1.4;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.infra-search-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.infra-search-input {
+  flex: 1;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 0.62rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+}
+
+.infra-search-input:focus {
+  outline: none;
+  border-color: #00f6ff;
+  box-shadow: 0 0 8px rgba(0, 246, 255, 0.4);
+}
+
+.infra-search-btn {
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.infra-search-btn:hover {
+  background: #38bdf8;
+  color: #020617;
+}
+
+.search-feedback-msg {
+  font-size: 0.58rem;
+  color: #38bdf8;
+  margin: 0.2rem 0 0.4rem 0;
+}
+
+.quick-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.chip-btn {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 0.56rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip-btn:hover {
+  border-color: #38bdf8;
+  color: #ffffff;
+  background: rgba(56, 189, 248, 0.2);
+}
+
+.infra-sample-item.clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.infra-sample-item.clickable:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-radius: 3px;
+}
+
+.sample-dot.purple { background: #a855f7; }
+
+.infra-badge-count.danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.infra-toggle-btn.danger-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+.infra-toggle-btn.danger-btn:hover {
+  background: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.5);
+}
+
+.simulation-result-box {
+  margin-top: 0.6rem;
+  background: rgba(30, 10, 15, 0.85);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 6px;
+  padding: 0.6rem;
+}
+
+.sim-alert {
+  font-size: 0.6rem;
+  color: #fca5a5;
+  display: block;
+  margin-bottom: 0.4rem;
+  line-height: 1.35;
+}
+
+.sim-badges {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.sim-pill {
+  font-size: 0.54rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+}
+
+.sim-pill.active {
+  border-color: #22c55e;
+  color: #4ade80;
 }
 </style>
 

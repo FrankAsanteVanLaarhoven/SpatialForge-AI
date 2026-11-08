@@ -113,6 +113,42 @@ export class OfflineLocalNeuralAgent {
       telemetry = { max_accel: '2.1g', spoof_prob: 0.002, status: 'CONFORMANT' };
     }
 
+    // 6. SpaceX Starship Mechazilla Catch & Starlink Constellation
+    else if (text.includes('starship') || text.includes('starlink') || text.includes('mechazilla') || text.includes('catch') || text.includes('boca chica') || text.includes('flight 5') || text.includes('flight 6')) {
+      intent = 'STARSHIP_MECHAZILLA_EMULATION';
+      safeDispatch('gev:toggle-starship-cockpit');
+      reply = "SpaceX Starship Flight 5/6 Mechazilla Catch & Starlink Constellation Emulation engaged. Initializing 33 Raptor engine telemetry, OLM launch stand, dual chopstick catch arms, Direct-to-Cell satellite mesh, and live media radar.";
+      executed = true;
+    }
+
+    // 7. Critical Infrastructure: Data Centers, Energy Sources & Subsea Cables
+    else if (text.includes('datacenter') || text.includes('data center') || text.includes('compute cluster')) {
+      intent = 'TOGGLE_DATACENTERS';
+      safeDispatch('gev:enable-layer', { id: 'local-datacenters' });
+      reply = "Enabling 4,300+ Global Hyperscale Data Centers. Rendering AWS, Google Cloud, Microsoft Azure, Equinix, and Digital Realty campuses with verified power draw (MW).";
+      executed = true;
+    } else if (text.includes('dam') || text.includes('hydro') || text.includes('power plant') || text.includes('energy') || text.includes('grid')) {
+      intent = 'TOGGLE_DAMS';
+      safeDispatch('gev:enable-layer', { id: 'local-dams' });
+      reply = "Enabling 500+ Hydroelectric Dams, Power Plants, and Energy Generating Stations. Correlating river basin generation (MW) with regional grid transmission.";
+      executed = true;
+    } else if (text.includes('cable') || text.includes('subsea') || text.includes('fiber') || text.includes('submarine')) {
+      intent = 'TOGGLE_CABLES';
+      safeDispatch('gev:enable-layer', { id: 'telegeography-submarine-cables' });
+      reply = "Enabling Telegeography Global Submarine Fiber-Optic Cable Network. Highlighting transoceanic internet arteries and coastal landing interconnects.";
+      executed = true;
+    } else if (text.includes('sitrep') || text.includes('situation report') || text.includes('briefing') || text.includes('threat')) {
+      intent = 'RUN_SITREP';
+      safeDispatch('gev:trigger-ai-sitrep');
+      reply = "Autonomous Geospatial Situation Report (SITREP) generated. Synthesized active Starlink LEO beams, detected mobile cellular networks, nearby hyperscale compute, and power grid status.";
+      executed = true;
+    } else if (text.includes('blackout') || text.includes('outage') || text.includes('grid failure') || text.includes('simulate failure')) {
+      intent = 'SIMULATE_GRID_FAILURE';
+      safeDispatch('gev:simulate-grid-failure');
+      reply = "Grid Outage Simulation initiated: 110kV feeder dropped. Data center UPS active (48h runtime). 100% cellular voice/SMS diverted to Starlink Direct-to-Cell satellite constellation.";
+      executed = true;
+    }
+
     // Fallback general tactical response
     else {
       intent = 'TACTICAL_INSTRUCTION';
