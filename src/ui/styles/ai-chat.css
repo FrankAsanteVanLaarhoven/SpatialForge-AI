@@ -152,6 +152,41 @@
 #gev-chat-close {
   font-size: 1.25rem;
 }
+.gev-chat-model-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  background: rgba(15, 23, 42, 0.7);
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+}
+.gev-chat-model-label {
+  color: var(--accent, #00ffff);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+.gev-chat-model-select {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.45);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  outline: none;
+  cursor: pointer;
+}
+.gev-chat-model-select:focus {
+  border-color: var(--accent, #00ffff);
+}
 #gev-chat-messages {
   min-height: 8rem;
   overflow: auto;

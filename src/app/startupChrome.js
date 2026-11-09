@@ -29,6 +29,14 @@ export function startApplicationChrome({
     })
     .then(() => {
       if (disposed || signal.aborted) return;
+      if (loadingScreen.dataset.keepSplash === 'true') {
+        loadingScreen.addEventListener('gev:dismiss-splash', () => {
+          loadingScreen.classList.add('hidden');
+          loadingScreen.addEventListener('transitionend', revealFirstRun, { once: true });
+          revealTimer = setTimeout(revealFirstRun, 900);
+        }, { once: true });
+        return;
+      }
       loadingScreen.classList.add('hidden');
       loadingScreen.addEventListener('transitionend', revealFirstRun, {
         once: true,

@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { SNAPSHOT_FEED_STATES } from '../../../src/data/layerSnapshot.js';
 import {
   HUD_SUMMARY_MAX_CHARS,
@@ -12,6 +14,26 @@ import {
 import { enforceRateLimit, openAiRateLimiter } from './rate-limit.js';
 import { readRequestBody } from '../common/request.js';
 import { OPENAI_HUD_SUMMARY_MODEL_DEFAULT } from './constants.js';
+
+function getLiveEnvKey(name) {
+  if (process.env[name] && process.env[name].trim()) {
+    return process.env[name].trim();
+  }
+  for (const file of ['.env.local', '.env']) {
+    try {
+      const p = path.resolve(process.cwd(), file);
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p, 'utf8');
+        const match = new RegExp(`^${name}=["']?([^"'\r\n]+)["']?`, 'm').exec(content);
+        if (match && match[1]) {
+          process.env[name] = match[1].trim();
+          return match[1].trim();
+        }
+      }
+    } catch {}
+  }
+  return '';
+}
 
 function extractOpenAiResponseText(data) {
   if (typeof data?.output_text === 'string' && data.output_text.trim()) {

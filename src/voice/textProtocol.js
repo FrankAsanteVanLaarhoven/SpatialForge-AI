@@ -65,11 +65,20 @@ export const textProtocols = {
   },
   openai: {
     endpoint: '/api/openai/chat',
-    keyEnv: 'OPENAI_API_KEY',
+    keyEnv: 'OPENAI_API_KEY or OPENROUTER_API_KEY',
     user: (content) => ({ role: 'user', content }),
     note: (content) => ({ role: 'assistant', content }),
     isUser: (item) => item.role === 'user',
-    request: (messages) => ({ messages }),
+    request: (messages) => {
+      let model = 'anthropic/claude-3.5-sonnet';
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const stored = localStorage.getItem('gev_chat_model') || localStorage.getItem('gev_selected_model');
+          if (stored) model = stored;
+        }
+      } catch {}
+      return { messages, model };
+    },
     decode(data) {
       const content = data?.content;
       if (

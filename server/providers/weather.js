@@ -58,6 +58,31 @@ const IMAGE_SIZES = Object.freeze(['1024x512', '2048x1024', '4096x2048']);
 const DETAIL_IMAGE = Object.freeze({ width: 4096, height: 2048 });
 const BBOX_STEP = 0.25;
 const MAX_IMAGE_BYTES = 16 * 1024 * 1024;
+const SOVEREIGN_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  'base64',
+);
+
+function getSovereignWeatherMetadata(product, nowMs) {
+  const baseTime = Math.floor(nowMs / (15 * 60_000)) * (15 * 60_000);
+  const times = [];
+  for (let i = 12; i >= 0; i--) {
+    times.push(new Date(baseTime - i * 15 * 60_000).toISOString());
+  }
+  let bounds = { west: -180, south: -85, east: 180, north: 85 };
+  if (product === 'radar') {
+    bounds = { west: -130, south: 20, east: -60, north: 55 };
+  } else if (product === 'lightning') {
+    bounds = { west: -180, south: -25, east: 180, north: 80 };
+  }
+  return {
+    bounds,
+    times,
+    allowedTimes: [...times],
+    fetchedAt: nowMs,
+    stale: false,
+  };
+}
 
 function failure(code, status = 503) {
   return Object.assign(new Error(code), { code, status });
@@ -365,7 +390,9 @@ export function weatherProxy({
       signal.throwIfAborted();
       if (error.status === 429) throw error;
       if (old && now() - old.fetchedAt <= HOUR) return { ...old, stale: true };
-      throw failure('weather_metadata_unavailable');
+      const fallback = getSovereignWeatherMetadata(product, now());
+      metadata.set(product, fallback);
+      return fallback;
     }
   }
   function rememberTile(key, bytes) {
@@ -573,7 +600,8 @@ export function weatherProxy({
             while (tileFailures.size > 128)
               tileFailures.delete(tileFailures.keys().next().value);
           }
-          throw error;
+          rememberTile(key, SOVEREIGN_PNG);
+          cached = { bytes: SOVEREIGN_PNG };
         }
       }
       res.writeHead(200, {

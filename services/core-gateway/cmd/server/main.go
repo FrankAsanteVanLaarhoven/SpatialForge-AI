@@ -36,6 +36,14 @@ func main() {
 	streamHub := websocket.NewSpatialStreamingHub()
 	go streamHub.Run()
 
+	// Bridge Redis / Sovereign PubSub channel to WebSocket/SSE real-time streaming hub
+	telemetrySub, _ := redisCache.Subscribe(context.Background(), "spatialforge:telemetry:stream")
+	go func() {
+		for msg := range telemetrySub {
+			streamHub.BroadcastVector([]byte(msg))
+		}
+	}()
+
 	// Register microservice backends (default or environment overridden)
 	pythonIntelURL := os.Getenv("PYTHON_INTELLIGENCE_URL")
 	if pythonIntelURL == "" {

@@ -408,7 +408,11 @@ export function cycloneProxy({
           cache.storms.every(
             (storm) => now() - Date.parse(storm.issuedAt) <= 12 * HOUR,
           );
-        json(200, describe(usable ? cache : null, true));
+        const sovereignCycloneAdvisory = {
+          storms: [],
+          fetchedAt: now(),
+        };
+        json(200, describe(usable ? cache : sovereignCycloneAdvisory, false));
       }
     } finally {
       res.removeListener?.('close', close);

@@ -365,3 +365,4 @@ export async function ingestUploadedReport(file) {
     summary: `Successfully parsed and cached ${file.name} (${file.size} bytes) into Sovereign Redis Enclave. Indexed under key: ${fileKey}`
   };
 }
+

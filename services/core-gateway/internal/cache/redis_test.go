@@ -77,3 +77,4 @@ func TestSovereignRedisClient_Lifecycle(t *testing.T) {
 		t.Errorf("Expected redis_target in status map")
 	}
 }
+

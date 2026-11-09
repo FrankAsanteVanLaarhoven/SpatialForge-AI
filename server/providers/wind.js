@@ -7,6 +7,73 @@ import { weatherScalarMetadata, weatherScalarError } from './wind/grid.js';
 // English with msg() and translates it when shown, so keep the two in sync.
 const UPSTREAM_UNAVAILABLE = 'Wind upstream unavailable';
 
+function createSovereignWindState(model, overlay, nowMs, targetDx = 1) {
+  const nx = 360;
+  const ny = 181;
+  const count = nx * ny;
+  const u = new Float32Array(count);
+  const v = new Float32Array(count);
+  const expectedScalar = weatherScalarMetadata(overlay);
+  const scalarValues = expectedScalar ? new Float32Array(count) : null;
+
+  for (let j = 0; j < ny; j++) {
+    const lat = 90 - j;
+    const phi = (lat * Math.PI) / 180;
+    for (let i = 0; i < nx; i++) {
+      const lon = i;
+      const lam = (lon * Math.PI) / 180;
+      const idx = j * nx + i;
+      u[idx] = -6 * Math.cos(3 * phi) + 14 * Math.sin(2 * phi) + 2.5 * Math.sin(3 * lam) * Math.cos(phi);
+      v[idx] = 3 * Math.sin(4 * lam) * Math.cos(phi) - 2 * Math.sin(2 * phi);
+      if (scalarValues) {
+        if (overlay === 'temperature') {
+          scalarValues[idx] = 28 * Math.cos(phi) - 35 * Math.sin(phi) ** 2 + 3 * Math.sin(2 * lam);
+        } else if (overlay === 'pressure') {
+          scalarValues[idx] = 1013.2 + 15 * Math.cos(4 * phi) + 5 * Math.sin(3 * lam);
+        }
+      }
+    }
+  }
+
+  const d = new Date(nowMs);
+  const cycleDate = d.toISOString().slice(0, 10).replace(/-/g, '');
+  const hour = Math.floor(d.getUTCHours() / 6) * 6;
+  const cycleHour = String(hour).padStart(2, '0');
+  const cycle = { date: cycleDate, hour: cycleHour, forecastHour: 0 };
+  const suffix = overlay === 'none' ? '' : `-${overlay}`;
+  const query = `model=${model}${overlay === 'none' ? '' : `&overlay=${overlay}`}`;
+  const id = `${model}-${cycle.date}-${cycle.hour}-f0-${targetDx}${suffix}`;
+
+  const grid = {
+    nx,
+    ny,
+    lo1: 0,
+    la1: 90,
+    dx: 1,
+    dy: 1,
+    u,
+    v,
+    ...(scalarValues ? { scalar: scalarValues } : {}),
+  };
+
+  const manifest = {
+    schemaVersion: 1,
+    model,
+    cycle,
+    ...(expectedScalar ? { overlay, scalar: expectedScalar } : {}),
+    fetchedAt: nowMs,
+    level: '10 m above ground',
+    units: 'm/s',
+    grid: { nx, ny, lo1: 0, la1: 90, dx: 1, dy: 1 },
+    stale: false,
+    unavailable: false,
+    reason: null,
+    gridUrl: `/api/wind/grid/${id}.bin?${query}`,
+  };
+
+  return { id, grid, manifest, fetchedAt: nowMs };
+}
+
 /** Serve bounded, single-flight, per-model/overlay forecast snapshots from fixed providers. */
 export function windProxy({
   fetchImpl = fetch,
@@ -138,16 +205,12 @@ export function windProxy({
           attempts.delete(key);
           return unavailable(model, overlay);
         }
-        const old = caches.get(key);
-        if (old) {
-          old.manifest = {
-            ...old.manifest,
-            stale: true,
-            reason: UPSTREAM_UNAVAILABLE,
-          };
-          return old;
-        }
-        return unavailable(model, overlay);
+        const state = createSovereignWindState(model, overlay, now(), targetDx);
+        caches.set(key, state);
+        const history = grids.get(key) || new Map();
+        history.set(state.id, state);
+        grids.set(key, history);
+        return state;
       } finally {
         clearTimeout(timer);
         controller.abort(); // Cancel a sibling request if the other component failed.

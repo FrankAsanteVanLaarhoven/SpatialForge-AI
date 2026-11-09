@@ -101,3 +101,4 @@ class SovereignPythonCache:
                 "in_memory_keys": len(self._in_memory_store),
                 "last_checked_utc": self.last_checked_utc or datetime.now(timezone.utc).isoformat(),
             }
+

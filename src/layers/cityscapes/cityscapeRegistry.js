@@ -261,3 +261,4 @@ export function flyToCityscape(cityId, modeIndex = 0) {
   }
   return false;
 }
+
