@@ -221,7 +221,7 @@ export function stripKeylessBasemapFromHash(hash) {
   }
 }
 
-const TIER_DOTS = Object.freeze({ metered: '🔴', paid: '🔴', free: '🟡' });
+const TIER_DOTS = Object.freeze({ metered: '●', paid: '●', free: '○' });
 
 /** One key row as the view renders it, from the status payload's own text. */
 function presentRow(key) {

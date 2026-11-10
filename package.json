@@ -48,6 +48,8 @@
     "preview": "vite preview",
     "test": "node scripts/run-unit-tests.mjs",
     "test:perf": "node scripts/run-perf-tests.mjs",
+    "audit:test": "python3 -m unittest discover -s audit -p \"test_*.py\"",
+    "audit:benchmark": "python3 audit/benchmark_throughput.py",
     "typecheck": "tsc --noEmit",
     "test:track": "node scripts/track-regression.mjs",
     "qa:map-source-tray": "node scripts/qa-map-source-tray.mjs",

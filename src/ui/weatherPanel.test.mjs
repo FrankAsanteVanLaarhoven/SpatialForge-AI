@@ -380,7 +380,7 @@ const cyclone = {
 };
 const satellite = {
   id: 'weather-satellite',
-  icon: '☁',
+  icon: '◍',
   summary: { label: 'Satellite clouds' },
 };
 const lightning = {

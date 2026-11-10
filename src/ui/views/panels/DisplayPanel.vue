@@ -148,7 +148,7 @@ const allocationOptions = computed(() => [
          convention as #scope-toggle. ui.js re-syncs both from durable layer state, which
          is what flips them back for a share link or a stored session carrying 3D off. -->
     <UiButton class="pp-toggle-btn" :pressed="models3dOn" pressed-class="active" id="models3d-toggle" @click="act('toggleModels')" :title="t('3D aircraft — flat icons zoomed out, 3D models up close')">
-      <span class="pp-icon">&#x2708;</span>
+      <span class="pp-icon material-symbols-outlined" aria-hidden="true">flight</span>
       <span class="pp-label">3D</span>
     </UiButton>
     <div class="pp-slider-row" :class="{ visible: models3d?.rowVisible ?? true }" id="models3d-mode-row">
@@ -181,7 +181,7 @@ const allocationOptions = computed(() => [
   </button>
   <div class="pp-toggle-group">
     <button class="pp-toggle-btn" :class="{ active: view?.bloom.active }" id="bloom-toggle" @click="act('toggleBloom')" :title="t('Bloom / Glow')">
-      <span class="pp-icon">&#x2728;</span>
+      <span class="pp-icon material-symbols-outlined" aria-hidden="true">blur_on</span>
       <span class="pp-label">{{ t('Bloom') }}</span>
     </button>
     <div class="pp-slider-row" :class="{ visible: view?.bloom.active }" id="bloom-slider-row">
@@ -191,7 +191,7 @@ const allocationOptions = computed(() => [
   </div>
   <div class="pp-toggle-group">
     <button class="pp-toggle-btn" :class="{ active: view?.sharpen.active }" id="sharpen-toggle" @click="act('toggleSharpen')" :title="t('Sharpening')">
-      <span class="pp-icon">&#x1F50D;</span>
+      <span class="pp-icon material-symbols-outlined" aria-hidden="true">tune</span>
       <span class="pp-label">{{ t('Sharpen') }}</span>
     </button>
     <div class="pp-slider-row" :class="{ visible: view?.sharpen.active }" id="sharpen-slider-row">

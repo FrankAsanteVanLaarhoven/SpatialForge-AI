@@ -92,17 +92,17 @@ function selectMapSource(chip) {
           <span class="btn-key">2</span>
         </button>
         <button class="style-btn" data-style="surveillance" @click="display.act('setStyle', 'surveillance')" v-class-toggle="{ ...(style && { active: style.name === 'surveillance' }) }" :title="t('Simulate night-vision goggles with green intensification and a tube vignette.')">
-          <span class="btn-icon">☾</span>
+          <span class="btn-icon">◓</span>
           <span class="btn-label">{{ t('NVG') }}</span>
           <span class="btn-key">3</span>
         </button>
         <button class="style-btn" data-style="thermal" @click="display.act('setStyle', 'thermal')" v-class-toggle="{ ...(style && { active: style.name === 'thermal' }) }" :title="t('Simulate FLIR-style thermal contrast. Turn up Ironbow for color.')">
-          <span class="btn-icon">♨</span>
+          <span class="btn-icon">◈</span>
           <span class="btn-label">{{ t('FLIR') }}</span>
           <span class="btn-key">4</span>
         </button>
         <button class="style-btn" data-style="anime" @click="display.act('setStyle', 'anime')" v-class-toggle="{ ...(style && { active: style.name === 'anime' }) }" :title="t('Apply bright cel-shaded color and illustrated outlines.')">
-          <span class="btn-icon">✦</span>
+          <span class="btn-icon">❖</span>
           <span class="btn-label">{{ t('Anime') }}</span>
           <span class="btn-key">5</span>
         </button>

@@ -295,7 +295,7 @@ export function createQueries({
 
     name: 'Live Flights',
 
-    icon: '✈',
+    icon: '▲',
 
     source: flightState.feed._lastSource,
 
