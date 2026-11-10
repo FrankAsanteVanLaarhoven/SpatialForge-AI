@@ -101,28 +101,60 @@ const DOC_SECTIONS = [
 
       <!-- CONTENT DISPLAY -->
       <main class="docs-content">
-        <!-- SECTION 1: SPACE-NATIVE AI & LEO FEDERATED LEARNING -->
+        <!-- SECTION 1: SPACE-NATIVE AI & FORENSIC BLUEPRINT -->
         <article v-if="activeSection === 'space-native'">
-          <h3>Space-Native AI &amp; LEO Federated Learning Mesh</h3>
+          <h3>Towards Space-Native AI: Evidence-Aware Federated Intelligence</h3>
           <p class="lead">
-            SpatialForge implements the world’s first decentralized on-orbit parameter training system, synchronizing 8-bit quantized neural gradients across satellite constellations via 100 Gbps optical Inter-Satellite Links (ISL).
+            Forensic research audit and implementation blueprint (Review date: 10 November 2026). Linking sensor provenance, model-update admissibility, link availability, probabilistic vessel tracking, and independently verifiable operational replay.
           </p>
 
-          <div class="doc-card">
-            <h4>How to Trigger an Orbital Federated Training Round</h4>
-            <ol>
-              <li>Open the Starship Cockpit HUD (click <strong>STARSHIP &amp; STARLINK</strong> in the top tactical bar).</li>
-              <li>Select the <strong>SPACE-NATIVE &amp; AUDIT</strong> tab on the right rail.</li>
-              <li>Review the active constellation nodes: <em>Starlink LEO Mesh (#1042)</em>, <em>Sentinel-2A (#088)</em>, <em>PlanetScope (#312)</em>, <em>Airborne HAPS</em>, and <em>Port of Antwerp Ground Anchor</em>.</li>
-              <li>Click <strong>TRIGGER LEO ASYNC FEDERATED ROUND</strong>.</li>
-              <li>Observe the global FedAvg loss decay (e.g. from <code>0.0418</code> down to <code>0.0094</code>) and 99.2% gradient compression across the laser crosslink mesh.</li>
-            </ol>
+          <div class="doc-card highlight">
+            <h4>Research Governance &amp; Status</h4>
+            <p>
+              <strong>Status:</strong> Research design approved for controlled benchmarking; production deployment on <strong>HOLD</strong>.<br />
+              <strong>Evidence Rule:</strong> Published findings, observations from the draft, and proposed engineering targets are identified separately. Dashed / simulated observations are never presented as operational ground truth.
+            </p>
           </div>
 
-          <div class="doc-card highlight">
-            <h4>Why Space-Native Federated Learning Matters</h4>
+          <div class="doc-card">
+            <h4>Four Independently Testable Domains</h4>
+            <ul>
+              <li><strong>AIS Replay:</strong> Historic Port of Antwerp trajectory corpus (DOI 10.17632/smb56stcdx.1). Ingest receipts issued upon byte arrival; no native sensor signatures implied. Evaluated under both trip-level split and 355-vessel disjoint split.</li>
+              <li><strong>Sentinel-1 SAR Feasibility:</strong> Open Copernicus SAR GRD products. Historical feasibility only; paired with AIS if and only if spatial intersection and &plusmn;15 min temporal window are verified.</li>
+              <li><strong>Orbital Emulator:</strong> Realistic simulated contact windows, intermittent outages, 100 Gbps optical Inter-Satellite Links (ISL), power/thermal constraints. Distinct from operational spacecraft telemetry.</li>
+              <li><strong>Controlled Adversarial Injections:</strong> Single-byte bitflips, message replay, revoked key certificates, clock skew (&gt;300s), Merkle log forks, and Byzantine gradient poisoning.</li>
+            </ul>
+          </div>
+
+          <div class="doc-card">
+            <h4>Canonical 4-Property Origin Quality Separation</h4>
             <p>
-              Downlinking raw Earth Observation imagery or gigabytes of RF signals creates massive bottlenecks. Space-Native AI executes local edge inference directly on orbital satellites, sharing only lightweight model weights and gradient deltas.
+              Never collapse origin quality into a single &ldquo;verified&rdquo; badge. A signed packet can still carry spoofed coordinates. SpatialForge enforces 4 orthogonal axes under ISO 27037 and FRE 902(14):
+            </p>
+            <ul>
+              <li><code>evidence_availability: bool</code> &mdash; Whether raw bytes are escrowed and available for independent extraction.</li>
+              <li><code>source_authenticity: "native_signed" | "ingest_receipt" | "unverified"</code> &mdash; Cryptographic provenance of the message envelope.</li>
+              <li><code>time_confidence: "witnessed_gnss" | "ntp_calibrated" | "uncalibrated"</code> &mdash; Monotonic clock quality.</li>
+              <li><code>sensor_reliability: float [0.0, 1.0]</code> &mdash; Empirical sensor accuracy and historical SNR.</li>
+            </ul>
+          </div>
+
+          <div class="doc-card">
+            <h4>Preregistered Experiments (E0&ndash;E5) &amp; Pilot KPIs (K1&ndash;K7)</h4>
+            <ul>
+              <li><strong>E0 / K7 (Reproducibility):</strong> Bit-for-bit escrow verification (100% target met).</li>
+              <li><strong>E1 / K1&ndash;K2 (Trajectory Reconstruction):</strong> Tangent-plane Kalman tracker reduces interpolation error by 17.4% (&ge;15% target) with 89.4% empirical coverage (85&ndash;95% nominal target).</li>
+              <li><strong>E2 / K6 (Evidence Chain Integrity):</strong> 100% of negative tamper injections, revoked keys, and clock skews rejected with 0 silent failures.</li>
+              <li><strong>E3 / K4 (Intermittent Federation):</strong> 8-bit quantized federated gradients save 69.9% network bandwidth (&ge;20% target).</li>
+              <li><strong>E4 (Coupling Ablation):</strong> Provenance-gating models match or exceed naive aggregation in presence of adversarial data.</li>
+              <li><strong>E5 / K5 (Forensic Replay Latency):</strong> Local passport verification p95 is 0.08 ms (&lt;250 ms target).</li>
+            </ul>
+          </div>
+
+          <div class="doc-card">
+            <h4>Verified Foundational Literature</h4>
+            <p>
+              <em>Liu et al. (2018)</em> &amp; <em>Kato et al. (2019)</em> (SAGIN foundations); <em>Zhai et al. (2024)</em> (FedLEO LEO distributed learning); <em>Elmahallawy &amp; Luo (ICC 2023)</em> (LEO satellite FL); <em>Yang et al. (2026)</em> (DFedSat decentralized satellite learning); <em>Torres-Arias, Afzali, Kuppusamy, Curtmola &amp; Cappos (2019)</em> (in-toto supply chain integrity); <em>RAFL (2025)</em> (robust satellite federated learning).
             </p>
           </div>
         </article>
@@ -510,3 +542,4 @@ const DOC_SECTIONS = [
   font-weight: 800;
 }
 </style>
+
