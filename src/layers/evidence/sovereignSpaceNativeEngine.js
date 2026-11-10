@@ -320,7 +320,7 @@ export async function triggerLeoFederatedRound() {
 }
 
 /**
- * Fetches the complete E0-E5 benchmark suite and K1-K7 KPI audit
+ * Fetches the complete E0-E5 benchmark suite and K1-K7 KPI audit from the live audit service
  */
 export async function fetchLiveBenchmarks() {
   try {
@@ -329,19 +329,19 @@ export async function fetchLiveBenchmarks() {
       return await res.json();
     }
   } catch {
-    // Offline deterministic fallback
+    // Service offline: Fail closed and return NOT_RUN per Release Assurance Gate G0
   }
 
   return {
-    E0_evidence_reproducibility: { status: 'PASS', source_dataset_verified: true },
-    E1_trajectory_reconstruction: { status: 'PASS', error_reduction_pct: 17.4, empirical_coverage_90pct_nominal: 0.894 },
-    E2_evidence_chain_integrity: { status: 'PASS', k6_negative_tests_rejected_pct: 100.0, silent_acceptance_count: 0 },
-    E3_intermittent_federation: { status: 'PASS', bandwidth_saving_pct: 69.9, k4_target_met: true },
-    E4_proposed_coupling_ablation: { status: 'PASS', conclusion: 'Provenance + update admissibility preserves task quality.' },
-    E5_human_forensic_replay: { status: 'PASS', latency_p95_ms: 0.08, k7_reproducibility_escrow_pct: 100.0 },
+    E0_evidence_reproducibility: { status: 'NOT_RUN', source_dataset_verified: false, reason: 'Live audit service offline; raw artifacts unverified' },
+    E1_trajectory_reconstruction: { status: 'NOT_RUN', error_reduction_pct: null, empirical_coverage_90pct_nominal: null, reason: 'Live audit service offline' },
+    E2_evidence_chain_integrity: { status: 'NOT_RUN', k6_negative_tests_rejected_pct: null, silent_acceptance_count: null, reason: 'Negative injection suite not executed' },
+    E3_intermittent_federation: { status: 'NOT_RUN', bandwidth_saving_pct: null, k4_target_met: false, reason: 'Orbital FL simulation not executed' },
+    E4_proposed_coupling_ablation: { status: 'NOT_RUN', conclusion: 'Unverified; live run required' },
+    E5_human_forensic_replay: { status: 'NOT_RUN', latency_p95_ms: null, k7_reproducibility_escrow_pct: null, reason: 'Passport verification not run' },
     overall_assessment: {
       review_date: '10 November 2026',
-      governance_decision: 'GO for offline reproducibility and architecture; HOLD for SOTA and production claims.'
+      governance_decision: 'HOLD: Service offline. Raw execution logs required before claiming benchmark PASS.'
     }
   };
 }
@@ -356,35 +356,38 @@ export async function fetchAuditPassport(subjectId = 'TARGET_S1A_01') {
       return await res.json();
     }
   } catch {
-    // Offline deterministic fallback
+    // Offline fallback: Fail closed; do not claim inclusion proof or acceptance
   }
 
   return {
-    passport_id: `pass-${subjectId.toLowerCase()}`,
-    alert_id: `alert-${subjectId.toLowerCase()}-01`,
+    passport_id: `pass-${subjectId.toLowerCase()}-unverified`,
+    alert_id: `alert-${subjectId.toLowerCase()}-demo`,
     event: {
       schema_version: 'space-native-v1',
       source_id: subjectId,
-      evidence_availability: true,
-      source_authenticity: 'ingest_receipt',
-      time_confidence: 'ntp_calibrated',
-      sensor_reliability: 0.92,
-      legal_basis_or_licence: 'CC BY 4.0 / Statutory Escrow',
-      disposition: 'PENDING_REVIEW'
+      evidence_availability: false,
+      source_authenticity: 'unverified',
+      time_confidence: 'uncalibrated',
+      sensor_reliability: 0.0,
+      legal_basis_or_licence: 'DEMONSTRATOR_FIXTURE_ONLY',
+      disposition: 'UNVERIFIED_DEMONSTRATOR'
     },
-    disposition: 'ACCEPTED',
-    human_reviewer: 'human-officer-01',
+    disposition: 'UNVERIFIED_DEMONSTRATOR',
+    human_reviewer: 'UNASSIGNED',
     merkle_inclusion_proof: {
-      leaf_index: 0,
-      tree_size: 1,
-      root: '9e2528b8f60bda84afc7fbe889fedc3435f03367a4736a080ff696549778a794',
+      status: 'NOT_PROVEN_DEMONSTRATOR_ONLY',
+      leaf_index: -1,
+      tree_size: 0,
+      root: 'UNVERIFIED_OFFLINE',
       proof_path: []
     }
   };
 }
 
 /**
- * Generates an ISO/IEC 27037 and FRE 902(14) compliant Ed25519 DSSE signed forensic attestation
+ * Generates an in-toto DSSE attestation statement for browser evaluation.
+ * NOTE (Release Gate G0): This output is a DEMONSTRATOR FIXTURE. It does NOT invoke
+ * the trusted Rust hardware-enclave signer and must NOT be presented as a legally sealed record.
  */
 export function generateCourtAdmissibleAttestation(targetId) {
   const target = UNCERTAINTY_TARGETS.find(t => t.id === targetId) || UNCERTAINTY_TARGETS[0];
@@ -402,10 +405,11 @@ export function generateCourtAdmissibleAttestation(targetId) {
     predicateType: "https://spatialforge.ai/attestation/space-native/v1",
     predicate: {
       timestamp: new Date().toISOString(),
-      standardsCompliance: [
-        "ISO/IEC 27037:2012 (Identification, collection & preservation of digital evidence)",
-        "Federal Rules of Evidence 902(14) (Certified Data from Electronic Device)",
-        "RFC 9162 (Certificate & Evidence Transparency Log)"
+      evaluationStatus: "SIMULATED_DEMONSTRATOR_NOT_VERIFIED",
+      standardsComplianceTarget: [
+        "ISO/IEC 27037:2012 (Target standard for digital evidence collection)",
+        "Federal Rules of Evidence 902(14) (Target standard for self-authenticating data)",
+        "RFC 9162 (Target standard for Merkle transparency)"
       ],
       // 4-property separation
       originProperties: target.originProperties,
@@ -423,7 +427,8 @@ export function generateCourtAdmissibleAttestation(targetId) {
       },
       orbitalFLRoundId: LEO_FL_STATE.currentRound,
       consensusWitnesses: LEO_FEDERATED_NODES.map(n => n.id),
-      courtAdmissibilityStatus: "SELF-AUTHENTICATING ELECTRONIC RECORD CERTIFIED UNDER FRE 902(14)"
+      courtAdmissibilityStatus: "NOT_ADMISSIBLE_DEMONSTRATOR_ONLY - Enclave Signature Required",
+      disclaimer: "SIMULATED ARTIFACT: Demonstrator fixture only. Not an authentic Ed25519 hardware key signature."
     }
   };
 
@@ -432,10 +437,11 @@ export function generateCourtAdmissibleAttestation(targetId) {
     payload: btoa(JSON.stringify(statement)),
     signatures: [
       {
-        keyid: "ed25519-sovereign-root-pub-4a81",
-        sig: "3a88d7f022ef1492ba09e394019a778b02934ec8912ef093a1049281aef9820c",
+        keyid: "SIMULATED-DEV-FIXTURE-NOT-SIGNED",
+        sig: "SIMULATED_SIGNATURE_FIXTURE_NOT_AUTHENTICATED",
+        signatureVerificationStatus: "UNVERIFIED_DEMONSTRATOR",
         timestamp: new Date().toISOString(),
-        merkleRootConsensus: "e490218b091f2c90e18429184a8bc1947e928148b192847104b2914081c74820"
+        merkleRootConsensus: "UNVERIFIED_LOCAL_FIXTURE_ROOT"
       }
     ],
     humanReadableStatement: statement

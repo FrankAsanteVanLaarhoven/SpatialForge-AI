@@ -157,19 +157,19 @@ function handleToggleEllipsoids() {
 function handleTriggerFlRound() {
   const res = triggerLeoFederatedRound();
   flState.value = { ...LEO_FL_STATE };
-  courtSealNotice.value = `Asynchronous LEO Round #${res.round} aggregated over 100 Gbps optical ISL. Loss: ${res.globalLoss}`;
+  courtSealNotice.value = `LEO Round #${res.round} simulated cycle (SIMULATED / NOT VERIFIED - Demonstrator loss: ${res.globalLoss})`;
   setTimeout(() => { courtSealNotice.value = ''; }, 4500);
 }
 
 function handleSealCourtEvidence(target) {
   const bundle = generateCourtAdmissibleAttestation(target.id);
   courtAttestationModal.value = bundle;
-  courtSealNotice.value = `Target [${target.name}] cryptographically sealed with Ed25519 DSSE Envelope (FRE 902(14) Self-Authenticating).`;
+  courtSealNotice.value = `Target [${target.name}] prepared in demonstrator DSSE format (SIMULATED / NOT VERIFIED - Enclave signature required).`;
 }
 
 function handleDownloadEvidenceJson(target) {
   exportEvidenceBundleJson(target.id);
-  courtSealNotice.value = `Court Evidence Bundle downloaded: ${target.name}.json`;
+  courtSealNotice.value = `Demonstrator payload exported: ${target.name}.json (SIMULATED / NOT VERIFIED)`;
 }
 
 // Space-Native Benchmarks, Passports & Human Reviewer Disposition
@@ -2465,17 +2465,17 @@ onUnmounted(() => {
           <div class="sovereign-card fl-orchestrator-card">
             <div class="sovereign-card-header">
               <span class="sovereign-title"><span class="eng-icon-inline" v-html="SVG_ICONS.orbital"></span> LEO FEDERATED LEARNING MESH</span>
-              <span class="sovereign-badge-fl">ROUND #{{ flState.currentRound }} ACTIVE</span>
+              <span class="sovereign-badge-fl amber">SIMULATED DEMO &bull; ROUND #{{ flState.currentRound }}</span>
             </div>
-            <p class="sovereign-desc">Decentralized on-orbit parameter training across LEO constellation nodes, synchronizing 8-bit quantized tensors via 100 Gbps optical Inter-Satellite Links (ISL).</p>
+            <p class="sovereign-desc">Simulated orbital parameter training (Demonstrator fixture). Validated training requires live edge workers, reproducible loss curves, and verified model update manifests.</p>
 
             <div class="fl-metrics-grid">
               <div class="fl-metric-cell">
-                <span class="fl-metric-lbl">GLOBAL FEDAVG LOSS</span>
+                <span class="fl-metric-lbl">DEMO LOSS</span>
                 <span class="fl-metric-val cyan">{{ flState.globalLoss }}</span>
               </div>
               <div class="fl-metric-cell">
-                <span class="fl-metric-lbl">OPTICAL ISL MESH</span>
+                <span class="fl-metric-lbl">EMULATED ISL</span>
                 <span class="fl-metric-val">{{ flState.islOpticalThroughput }}</span>
               </div>
               <div class="fl-metric-cell">
@@ -2483,8 +2483,8 @@ onUnmounted(() => {
                 <span class="fl-metric-val green">{{ flState.gradientCompression }}</span>
               </div>
               <div class="fl-metric-cell">
-                <span class="fl-metric-lbl">ORBITAL CONVERGENCE</span>
-                <span class="fl-metric-val purple">99.8%</span>
+                <span class="fl-metric-lbl">STATUS</span>
+                <span class="fl-metric-val amber">SIMULATED</span>
               </div>
             </div>
 
@@ -2502,7 +2502,7 @@ onUnmounted(() => {
             </div>
 
             <button class="sovereign-btn pulse" type="button" @click="handleTriggerFlRound">
-              <span class="eng-icon-inline" v-html="SVG_ICONS.chip"></span> TRIGGER LEO ASYNC FEDERATED ROUND
+              <span class="eng-icon-inline" v-html="SVG_ICONS.chip"></span> TRIGGER LEO ASYNC FEDERATED ROUND (DEMO)
             </button>
           </div>
 
@@ -2512,7 +2512,7 @@ onUnmounted(() => {
               <span class="sovereign-title"><span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span> 3D SPATIAL UNCERTAINTY ELLIPSOIDS</span>
               <span class="sovereign-badge-fl" :class="isEllipsoidsActive ? 'green' : 'amber'">{{ isEllipsoidsActive ? 'GLOBE VISUALIZED' : 'STANDBY' }}</span>
             </div>
-            <p class="sovereign-desc">Propagates dynamic 3D covariance matrices (&sigma;x &times; &sigma;y &times; &sigma;z). Automatically expands during sensor occlusion and collapses upon multi-sensor ground/space fusion.</p>
+            <p class="sovereign-desc">Derives dynamic 3D covariance matrices (&sigma;x &times; &sigma;y &times; &sigma;z) from observation history. Demonstrator fixture for Cesium visual rendering.</p>
 
             <div class="uncertainty-toggle-row">
               <button class="sovereign-btn-toggle" :class="{ active: isEllipsoidsActive }" type="button" @click="handleToggleEllipsoids">
@@ -2543,13 +2543,13 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- CARD 6: COURT-ADMISSIBLE FORENSIC SEALING & PASSPORT -->
+          <!-- CARD 6: EVIDENCE ATTESTATION SPECIFICATION & PASSPORT -->
           <div class="sovereign-card court-audit-card">
             <div class="sovereign-card-header">
-              <span class="sovereign-title"><span class="eng-icon-inline" v-html="SVG_ICONS.check"></span> COURT-ADMISSIBLE FORENSIC SEALING</span>
-              <span class="sovereign-badge-court">FRE 902(14) &amp; ISO 27037</span>
+              <span class="sovereign-title"><span class="eng-icon-inline" v-html="SVG_ICONS.check"></span> EVIDENCE ATTESTATION SPECIFICATION</span>
+              <span class="sovereign-badge-court amber">DEMONSTRATOR &bull; FRE 902(14) TARGET</span>
             </div>
-            <p class="sovereign-desc">Dead Simple Signing Envelope (DSSE) cryptographic attestation with Ed25519 hardware key, Merkle tree consensus root, and anti-tamper chain of custody.</p>
+            <p class="sovereign-desc">In-toto DSSE attestation structure for evaluation. Browser export is a demonstrator payload; genuine court-admissible sealing requires the Rust hardware enclave signer.</p>
 
             <div class="selected-target-preview">
               <div class="preview-row"><span>SELECTED SUBJECT:</span> <strong>{{ selectedUncertaintyTarget.name }}</strong></div>
@@ -2558,10 +2558,10 @@ onUnmounted(() => {
 
             <div class="court-actions-col">
               <button class="sovereign-btn court-seal-btn" type="button" @click="handleSealCourtEvidence(selectedUncertaintyTarget)">
-                <span class="eng-icon-inline" v-html="SVG_ICONS.laser"></span> SEAL WITH Ed25519 DSSE CONTRACT
+                <span class="eng-icon-inline" v-html="SVG_ICONS.laser"></span> PREPARE DSSE DEMONSTRATOR ATTESTATION
               </button>
               <button class="sovereign-btn court-download-btn" type="button" @click="handleDownloadEvidenceJson(selectedUncertaintyTarget)">
-                <span class="eng-icon-inline" v-html="SVG_ICONS.package"></span> EXPORT COURT EVIDENCE BUNDLE (.JSON)
+                <span class="eng-icon-inline" v-html="SVG_ICONS.package"></span> EXPORT DEMONSTRATOR PAYLOAD (.JSON)
               </button>
               <button class="sovereign-btn court-passport-btn" type="button" @click="handleLoadPassport(selectedUncertaintyTarget)">
                 <span class="eng-icon-inline" v-html="SVG_ICONS.fileText"></span> FETCH MERKLE DECISION PASSPORT
@@ -2572,7 +2572,9 @@ onUnmounted(() => {
             <div v-if="activePassport" class="attestation-modal-box">
               <div class="attestation-header">
                 <span>RFC 9162 MERKLE DECISION PASSPORT</span>
-                <span class="verified-tag">INCLUSION PROVEN</span>
+                <span class="verified-tag" :class="{ unverified: activePassport.merkle_inclusion_proof?.status === 'NOT_PROVEN_DEMONSTRATOR_ONLY' }">
+                  {{ activePassport.merkle_inclusion_proof?.status === 'NOT_PROVEN_DEMONSTRATOR_ONLY' ? 'UNVERIFIED DEMONSTRATOR' : 'INCLUSION PROVEN' }}
+                </span>
               </div>
               <div class="attestation-meta-grid">
                 <div><span>PASSPORT ID:</span> {{ activePassport.passport_id }}</div>
@@ -2585,14 +2587,14 @@ onUnmounted(() => {
             <!-- DSSE ATTESTATION MODAL -->
             <div v-if="courtAttestationModal" class="attestation-modal-box">
               <div class="attestation-header">
-                <span>SEALED EVIDENCE ATTESTATION (IN-TOTO DSSE)</span>
-                <span class="verified-tag">MERKLE VERIFIED</span>
+                <span>DEMONSTRATOR EVIDENCE ATTESTATION (IN-TOTO DSSE)</span>
+                <span class="verified-tag unverified">SIMULATED FIXTURE</span>
               </div>
               <div class="attestation-meta-grid">
                 <div><span>KEY ID:</span> {{ courtAttestationModal.signatures[0].keyid }}</div>
                 <div><span>PAYLOAD TYPE:</span> {{ courtAttestationModal.payloadType }}</div>
-                <div><span>MERKLE ROOT:</span> {{ courtAttestationModal.signatures[0].merkleRootConsensus.substring(0, 24) }}...</div>
-                <div><span>LEGAL STATUS:</span> {{ courtAttestationModal.humanReadableStatement.predicate.courtAdmissibilityStatus }}</div>
+                <div><span>VERIFICATION:</span> {{ courtAttestationModal.signatures[0].signatureVerificationStatus }}</div>
+                <div><span>ADMISSIBILITY:</span> {{ courtAttestationModal.humanReadableStatement.predicate.courtAdmissibilityStatus }}</div>
               </div>
               <pre class="attestation-payload-view">{{ JSON.stringify(courtAttestationModal.humanReadableStatement.predicate.coordinates, null, 2) }}</pre>
             </div>
@@ -6694,6 +6696,12 @@ onUnmounted(() => {
   padding: 0.05rem 0.25rem;
   border-radius: 2px;
   font-size: 0.38rem;
+}
+
+.verified-tag.unverified {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: #f59e0b;
 }
 
 .attestation-meta-grid {
