@@ -51,6 +51,15 @@ import {
   flyToCityscape,
 } from '../../../layers/cityscapes/cityscapeRegistry.js';
 import { SUPER_INTELLIGENCE_SPEC } from '../../../layers/starship/superIntelligenceEngine.js';
+import {
+  LEO_FEDERATED_NODES,
+  LEO_FL_STATE,
+  UNCERTAINTY_TARGETS,
+  toggle3DUncertaintyEllipsoids,
+  triggerLeoFederatedRound,
+  generateCourtAdmissibleAttestation,
+  exportEvidenceBundleJson,
+} from '../../../layers/evidence/sovereignSpaceNativeEngine.js';
 import { SVG_ICONS, getEngIcon } from '../../icons/engineeringIcons.js';
 
 const props = defineProps({
@@ -125,6 +134,38 @@ async function handleFileUpload(event) {
   } catch (err) {
     uploadStatusMsg.value = `Upload Error: ${err.message}`;
   }
+}
+
+// Sovereign Space-Native AI & Court Admissible Evidence State
+const isEllipsoidsActive = ref(false);
+const selectedUncertaintyTarget = ref(UNCERTAINTY_TARGETS[0]);
+const flState = ref(LEO_FL_STATE);
+const flNodes = ref(LEO_FEDERATED_NODES);
+const courtAttestationModal = ref(null);
+const courtSealNotice = ref('');
+
+function handleToggleEllipsoids() {
+  const viewer = window.viewer;
+  isEllipsoidsActive.value = !isEllipsoidsActive.value;
+  toggle3DUncertaintyEllipsoids(viewer, isEllipsoidsActive.value);
+}
+
+function handleTriggerFlRound() {
+  const res = triggerLeoFederatedRound();
+  flState.value = { ...LEO_FL_STATE };
+  courtSealNotice.value = `Asynchronous LEO Round #${res.round} aggregated over 100 Gbps optical ISL. Loss: ${res.globalLoss}`;
+  setTimeout(() => { courtSealNotice.value = ''; }, 4500);
+}
+
+function handleSealCourtEvidence(target) {
+  const bundle = generateCourtAdmissibleAttestation(target.id);
+  courtAttestationModal.value = bundle;
+  courtSealNotice.value = `Target [${target.name}] cryptographically sealed with Ed25519 DSSE Envelope (FRE 902(14) Self-Authenticating).`;
+}
+
+function handleDownloadEvidenceJson(target) {
+  exportEvidenceBundleJson(target.id);
+  courtSealNotice.value = `Court Evidence Bundle downloaded: ${target.name}.json`;
 }
 
 // Global Tracker (Skyscanner Flight & MarineTraffic Vessel State)
@@ -659,6 +700,13 @@ onUnmounted(() => {
             @click="activeTab = 'biz'"
           >
             TERRAFAB & BIZ
+          </button>
+          <button
+            class="tab-btn highlight-sovereign-tab"
+            :class="{ active: activeTab === 'sovereign-audit' }"
+            @click="activeTab = 'sovereign-audit'"
+          >
+            SPACE-NATIVE & AUDIT
           </button>
         </div>
 
@@ -1957,6 +2005,134 @@ onUnmounted(() => {
                   <div class="progress-fill" :style="{ width: selectedOutlookPhase.starlinkDominanceIndex + '%' }"></div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 7: SOVEREIGN SPACE-NATIVE AI & COURT-ADMISSIBLE AUDIT -->
+        <div v-if="activeTab === 'sovereign-audit'" class="tab-content">
+          <p v-if="courtSealNotice" class="court-notice-banner">
+            <span class="eng-icon-inline" v-html="SVG_ICONS.laser"></span> {{ courtSealNotice }}
+          </p>
+
+          <!-- CARD 1: LEO SATELLITE FEDERATED LEARNING ORCHESTRATION -->
+          <div class="sovereign-card fl-orchestrator-card">
+            <div class="sovereign-card-header">
+              <span class="sovereign-title"><span class="eng-icon-inline" v-html="SVG_ICONS.orbital"></span> LEO FEDERATED LEARNING MESH</span>
+              <span class="sovereign-badge-fl">ROUND #{{ flState.currentRound }} ACTIVE</span>
+            </div>
+            <p class="sovereign-desc">Decentralized on-orbit parameter training across LEO constellation nodes, synchronizing 8-bit quantized tensors via 100 Gbps optical Inter-Satellite Links (ISL).</p>
+
+            <div class="fl-metrics-grid">
+              <div class="fl-metric-cell">
+                <span class="fl-metric-lbl">GLOBAL FEDAVG LOSS</span>
+                <span class="fl-metric-val cyan">{{ flState.globalLoss }}</span>
+              </div>
+              <div class="fl-metric-cell">
+                <span class="fl-metric-lbl">OPTICAL ISL MESH</span>
+                <span class="fl-metric-val">{{ flState.islOpticalThroughput }}</span>
+              </div>
+              <div class="fl-metric-cell">
+                <span class="fl-metric-lbl">GRADIENT SPARSITY</span>
+                <span class="fl-metric-val green">{{ flState.gradientCompression }}</span>
+              </div>
+              <div class="fl-metric-cell">
+                <span class="fl-metric-lbl">ORBITAL CONVERGENCE</span>
+                <span class="fl-metric-val purple">99.8%</span>
+              </div>
+            </div>
+
+            <div class="fl-nodes-list">
+              <div v-for="node in flNodes" :key="node.id" class="fl-node-item">
+                <div class="fl-node-header">
+                  <span class="fl-node-name"><span class="fl-dot" :class="node.status === 'AGGREGATOR_LEAD' ? 'green' : 'blue'"></span> {{ node.name }}</span>
+                  <span class="fl-node-status">{{ node.status }}</span>
+                </div>
+                <div class="fl-node-meta">
+                  <span>{{ node.orbit }}</span>
+                  <span>LOSS: <strong>{{ node.localLoss }}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <button class="sovereign-btn pulse" type="button" @click="handleTriggerFlRound">
+              <span class="eng-icon-inline" v-html="SVG_ICONS.chip"></span> TRIGGER LEO ASYNC FEDERATED ROUND
+            </button>
+          </div>
+
+          <!-- CARD 2: DYNAMIC 3D SPATIAL UNCERTAINTY ELLIPSOIDS -->
+          <div class="sovereign-card uncertainty-card">
+            <div class="sovereign-card-header">
+              <span class="sovereign-title"><span class="eng-icon-inline" v-html="SVG_ICONS.vectorArrow"></span> 3D SPATIAL UNCERTAINTY ELLIPSOIDS</span>
+              <span class="sovereign-badge-fl" :class="isEllipsoidsActive ? 'green' : 'amber'">{{ isEllipsoidsActive ? 'GLOBE VISUALIZED' : 'STANDBY' }}</span>
+            </div>
+            <p class="sovereign-desc">Propagates dynamic 3D covariance matrices (&sigma;x &times; &sigma;y &times; &sigma;z). Automatically expands during sensor occlusion and collapses upon multi-sensor ground/space fusion.</p>
+
+            <div class="uncertainty-toggle-row">
+              <button class="sovereign-btn-toggle" :class="{ active: isEllipsoidsActive }" type="button" @click="handleToggleEllipsoids">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.laser"></span> {{ isEllipsoidsActive ? 'REMOVE 3D ELLIPSOIDS FROM GLOBE' : 'RENDER 3D UNCERTAINTY ELLIPSOIDS ON GLOBE' }}
+              </button>
+            </div>
+
+            <div class="uncertainty-targets-list">
+              <div 
+                v-for="target in UNCERTAINTY_TARGETS" 
+                :key="target.id" 
+                class="uncertainty-target-item clickable"
+                :class="{ selected: selectedUncertaintyTarget.id === target.id }"
+                @click="selectedUncertaintyTarget = target"
+              >
+                <div class="target-top-row">
+                  <span class="target-title">{{ target.name }}</span>
+                  <span class="target-state-tag" :class="target.stateType">{{ target.status }}</span>
+                </div>
+                <div class="target-ellipsoid-stats">
+                  <span>ELLIPSOID: <strong>{{ target.sigmaX }}m &times; {{ target.sigmaY }}m &times; {{ target.sigmaZ }}m</strong></span>
+                  <span>CONFIDENCE: <strong>{{ target.confidencePct }}%</strong></span>
+                </div>
+                <div class="target-origins-row">
+                  <span class="origins-lbl">SOURCES:</span> {{ target.origins.join(' &middot; ') }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 3: COURT-ADMISSIBLE FORENSIC SEALING (Ed25519 DSSE) -->
+          <div class="sovereign-card court-audit-card">
+            <div class="sovereign-card-header">
+              <span class="sovereign-title"><span class="eng-icon-inline" v-html="SVG_ICONS.check"></span> COURT-ADMISSIBLE FORENSIC SEALING</span>
+              <span class="sovereign-badge-court">FRE 902(14) &amp; ISO 27037</span>
+            </div>
+            <p class="sovereign-desc">Dead Simple Signing Envelope (DSSE) cryptographic attestation with Ed25519 hardware key, Merkle tree consensus root, and anti-tamper chain of custody.</p>
+
+            <div class="selected-target-preview">
+              <div class="preview-row"><span>SELECTED SUBJECT:</span> <strong>{{ selectedUncertaintyTarget.name }}</strong></div>
+              <div class="preview-row"><span>COORDINATES:</span> <strong>{{ selectedUncertaintyTarget.lat.toFixed(4) }}&deg; N, {{ selectedUncertaintyTarget.lon.toFixed(4) }}&deg; E</strong></div>
+              <div class="preview-row"><span>SPOOF RISK SCORE:</span> <strong :class="selectedUncertaintyTarget.spoofRiskScore > 0.5 ? 'red' : 'green'">{{ (selectedUncertaintyTarget.spoofRiskScore * 100).toFixed(1) }}%</strong></div>
+            </div>
+
+            <div class="court-actions-col">
+              <button class="sovereign-btn court-seal-btn" type="button" @click="handleSealCourtEvidence(selectedUncertaintyTarget)">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.laser"></span> SEAL WITH Ed25519 DSSE CONTRACT
+              </button>
+              <button class="sovereign-btn court-download-btn" type="button" @click="handleDownloadEvidenceJson(selectedUncertaintyTarget)">
+                <span class="eng-icon-inline" v-html="SVG_ICONS.package"></span> EXPORT COURT EVIDENCE BUNDLE (.JSON)
+              </button>
+            </div>
+
+            <!-- MODAL / READOUT FOR COURT CERTIFICATE -->
+            <div v-if="courtAttestationModal" class="attestation-modal-box">
+              <div class="attestation-header">
+                <span>SEALED EVIDENCE ATTESTATION (IN-TOTO DSSE)</span>
+                <span class="verified-tag">MERKLE VERIFIED</span>
+              </div>
+              <div class="attestation-meta-grid">
+                <div><span>KEY ID:</span> {{ courtAttestationModal.signatures[0].keyid }}</div>
+                <div><span>PAYLOAD TYPE:</span> {{ courtAttestationModal.payloadType }}</div>
+                <div><span>MERKLE ROOT:</span> {{ courtAttestationModal.signatures[0].merkleRootConsensus.substring(0, 24) }}...</div>
+                <div><span>LEGAL STATUS:</span> {{ courtAttestationModal.humanReadableStatement.predicate.courtAdmissibilityStatus }}</div>
+              </div>
+              <pre class="attestation-payload-view">{{ JSON.stringify(courtAttestationModal.humanReadableStatement.predicate.coordinates, null, 2) }}</pre>
             </div>
           </div>
         </div>
@@ -5395,6 +5571,397 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.15rem;
+}
+
+/* ── SOVEREIGN SPACE-NATIVE AI & COURT AUDIT CONSOLE STYLES ── */
+.highlight-sovereign-tab {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(168, 85, 247, 0.3)) !important;
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.highlight-sovereign-tab.active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.45), rgba(168, 85, 247, 0.5)) !important;
+  border-color: #a855f7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.6);
+}
+
+.court-notice-banner {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid #a855f7;
+  color: #f3e8ff;
+  font-size: 0.52rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.sovereign-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 6px;
+  padding: 0.65rem;
+  margin-bottom: 0.7rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.sovereign-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.sovereign-title {
+  font-size: 0.56rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sovereign-badge-fl {
+  font-size: 0.44rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+}
+
+.sovereign-badge-fl.amber {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.sovereign-badge-court {
+  font-size: 0.44rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid #a855f7;
+  color: #d8b4fe;
+}
+
+.sovereign-desc {
+  font-size: 0.48rem;
+  color: #94a3b8;
+  line-height: 1.35;
+  margin-bottom: 0.5rem;
+}
+
+.fl-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.fl-metric-cell {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.35rem 0.45rem;
+  border-radius: 4px;
+}
+
+.fl-metric-lbl {
+  display: block;
+  font-size: 0.4rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 0.1rem;
+}
+
+.fl-metric-val {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #f8fafc;
+  font-family: monospace;
+}
+
+.fl-metric-val.cyan { color: #38bdf8; }
+.fl-metric-val.green { color: #4ade80; }
+.fl-metric-val.purple { color: #c084fc; }
+
+.fl-nodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.fl-node-item {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.35rem 0.45rem;
+  border-radius: 4px;
+}
+
+.fl-node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.48rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.fl-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 0.2rem;
+}
+
+.fl-dot.green { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.fl-dot.blue { background: #38bdf8; box-shadow: 0 0 6px #38bdf8; }
+
+.fl-node-status {
+  font-size: 0.4rem;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.fl-node-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.42rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+.sovereign-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  border: 1px solid #38bdf8;
+  color: #ffffff;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.sovereign-btn:hover {
+  background: linear-gradient(135deg, #0369a1, #1d4ed8);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.sovereign-btn-toggle {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #94a3b8;
+  font-size: 0.5rem;
+  font-weight: 800;
+  padding: 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.sovereign-btn-toggle.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
+.uncertainty-targets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.uncertainty-target-item {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.4rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.uncertainty-target-item.clickable:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.uncertainty-target-item.selected {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
+.target-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.48rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 0.2rem;
+}
+
+.target-state-tag {
+  font-size: 0.38rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+  font-weight: 800;
+}
+
+.target-state-tag.nominal {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid #22c55e;
+}
+
+.target-state-tag.occluded {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.target-ellipsoid-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.42rem;
+  color: #94a3b8;
+  margin-bottom: 0.15rem;
+}
+
+.target-origins-row {
+  font-size: 0.4rem;
+  color: #cbd5e1;
+}
+
+.origins-lbl {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.court-actions-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.court-seal-btn {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  border-color: #a855f7;
+}
+
+.court-seal-btn:hover {
+  background: linear-gradient(135deg, #6d28d9, #4338ca);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+}
+
+.court-download-btn {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+.court-download-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+}
+
+.selected-target-preview {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.4rem;
+  border-radius: 4px;
+  font-size: 0.44rem;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.selected-target-preview strong {
+  color: #f1f5f9;
+}
+
+.selected-target-preview strong.red { color: #ef4444; }
+.selected-target-preview strong.green { color: #22c55e; }
+
+.attestation-modal-box {
+  margin-top: 0.6rem;
+  background: #090d16;
+  border: 1px solid #a855f7;
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.attestation-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.46rem;
+  font-weight: 800;
+  color: #d8b4fe;
+  margin-bottom: 0.35rem;
+}
+
+.verified-tag {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid #22c55e;
+  padding: 0.05rem 0.25rem;
+  border-radius: 2px;
+  font-size: 0.38rem;
+}
+
+.attestation-meta-grid {
+  font-size: 0.4rem;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.attestation-meta-grid span {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.attestation-payload-view {
+  font-size: 0.4rem;
+  font-family: monospace;
+  background: #04070e;
+  color: #38bdf8;
+  padding: 0.35rem;
+  border-radius: 2px;
+  max-height: 80px;
+  overflow-y: auto;
+  border: 1px solid rgba(56, 189, 248, 0.15);
 }
 
 </style>
