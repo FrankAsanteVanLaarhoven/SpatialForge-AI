@@ -26,6 +26,7 @@ import MissionRecordingPanel from './panels/MissionRecordingPanel.vue';
 import AirgapGestureOverlay from './panels/AirgapGestureOverlay.vue';
 import LocalNeuralAgentPanel from './panels/LocalNeuralAgentPanel.vue';
 import StarshipCockpitOverlay from './panels/StarshipCockpitOverlay.vue';
+import SovereignDocumentationPanel from './panels/SovereignDocumentationPanel.vue';
 
 // Starship liftoff & Mechazilla catch emulation is active by default on the landing page!
 const starshipActive = ref(true);
@@ -159,4 +160,5 @@ const vToastText = {
   <AirgapGestureOverlay />
   <LocalNeuralAgentPanel />
   <StarshipCockpitOverlay v-if="starshipActive" @close="starshipActive = false" />
+  <SovereignDocumentationPanel />
 </template>

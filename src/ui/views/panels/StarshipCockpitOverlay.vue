@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { makeDraggable, resetDashboardLayout } from '../../dashboard/dashboardLayout.js';
 import {
   STARBASE_LOCATION,
   MISSION_PHASES,
@@ -446,6 +447,83 @@ function handleSimulateGridFailure(name = 'Frankfurt') {
   gridSimulationResult.value = simulateGridOutageAndFallback(name);
 }
 
+// Draggable, Resizable & HUD Customization State
+const showTelemetryPanel = ref(true);
+const showRightPanel = ref(true);
+const showControlsPanel = ref(true);
+const isTelemetryMinimized = ref(false);
+const isRightPanelMinimized = ref(false);
+const isControlsMinimized = ref(false);
+
+const telemetryPanelRef = ref(null);
+const telemetryDragRef = ref(null);
+const rightPanelRef = ref(null);
+const rightDragRef = ref(null);
+const controlsPanelRef = ref(null);
+const controlsDragRef = ref(null);
+
+let cleanupTelemetryDrag = null;
+let cleanupRightDrag = null;
+let cleanupControlsDrag = null;
+
+function setupDraggables() {
+  if (cleanupTelemetryDrag) { cleanupTelemetryDrag(); cleanupTelemetryDrag = null; }
+  if (cleanupRightDrag) { cleanupRightDrag(); cleanupRightDrag = null; }
+  if (cleanupControlsDrag) { cleanupControlsDrag(); cleanupControlsDrag = null; }
+
+  nextTick(() => {
+    if (telemetryPanelRef.value && telemetryDragRef.value) {
+      cleanupTelemetryDrag = makeDraggable(
+        telemetryPanelRef.value,
+        telemetryDragRef.value,
+        'starship-telemetry-panel',
+        { x: 20, y: 136 }
+      );
+    }
+    if (rightPanelRef.value && rightDragRef.value) {
+      cleanupRightDrag = makeDraggable(
+        rightPanelRef.value,
+        rightDragRef.value,
+        'starship-right-panel',
+        { x: Math.max(20, window.innerWidth - 440), y: 136 }
+      );
+    }
+    if (controlsPanelRef.value && controlsDragRef.value) {
+      cleanupControlsDrag = makeDraggable(
+        controlsPanelRef.value,
+        controlsDragRef.value,
+        'starship-controls-panel',
+        { x: Math.max(20, Math.floor((window.innerWidth - 720) / 2)), y: Math.max(60, window.innerHeight - 200) }
+      );
+    }
+  });
+}
+
+watch([showTelemetryPanel, showRightPanel, showControlsPanel], () => {
+  setupDraggables();
+});
+
+function handleResetCockpitLayout() {
+  resetDashboardLayout();
+  showTelemetryPanel.value = true;
+  showRightPanel.value = true;
+  showControlsPanel.value = true;
+  isTelemetryMinimized.value = false;
+  isRightPanelMinimized.value = false;
+  isControlsMinimized.value = false;
+  setupDraggables();
+}
+
+function openDocumentation() {
+  window.dispatchEvent(new CustomEvent('gev:toggle-documentation'));
+}
+
+function handleOpenSpaceNativeAudit() {
+  showRightPanel.value = true;
+  isRightPanelMinimized.value = false;
+  activeTab.value = 'sovereign-audit';
+}
+
 onMounted(() => {
   // Connect to live Cesium viewer
   if (window.viewer) {
@@ -457,11 +535,21 @@ onMounted(() => {
     }
   }
   animFrame = requestAnimationFrame(tick);
+
+  window.addEventListener('gev:open-space-native-audit', handleOpenSpaceNativeAudit);
+  window.addEventListener('gev:dashboard-layout-reset', setupDraggables);
+  setupDraggables();
 });
 
 onUnmounted(() => {
   if (animFrame) cancelAnimationFrame(animFrame);
   if (sceneController) sceneController.destroy();
+
+  window.removeEventListener('gev:open-space-native-audit', handleOpenSpaceNativeAudit);
+  window.removeEventListener('gev:dashboard-layout-reset', setupDraggables);
+  if (cleanupTelemetryDrag) cleanupTelemetryDrag();
+  if (cleanupRightDrag) cleanupRightDrag();
+  if (cleanupControlsDrag) cleanupControlsDrag();
 });
 </script>
 
@@ -496,6 +584,48 @@ onUnmounted(() => {
         </button>
       </div>
 
+      <!-- CONSOLE CUSTOMIZATION & HUD TOGGLES -->
+      <div class="hud-toggles-bar" v-if="!isCinematicView">
+        <button
+          class="hud-toggle-pill"
+          :class="{ active: showTelemetryPanel }"
+          @click="showTelemetryPanel = !showTelemetryPanel"
+          title="Toggle Flight Dynamics & Vehicle Telemetry Panel"
+        >
+          <span class="hud-pill-dot"></span> TELEMETRY
+        </button>
+        <button
+          class="hud-toggle-pill"
+          :class="{ active: showRightPanel }"
+          @click="showRightPanel = !showRightPanel"
+          title="Toggle Intelligence & Sensor Mesh HUD"
+        >
+          <span class="hud-pill-dot"></span> INTEL & SENSORS
+        </button>
+        <button
+          class="hud-toggle-pill"
+          :class="{ active: showControlsPanel }"
+          @click="showControlsPanel = !showControlsPanel"
+          title="Toggle Mission Clock & Scrubber Dock"
+        >
+          <span class="hud-pill-dot"></span> CONTROLS
+        </button>
+        <button
+          class="hud-toggle-pill docs-pill"
+          @click="openDocumentation()"
+          title="Open Sovereign Evidence & Architecture Operator Manual"
+        >
+          <span class="eng-icon-inline" v-html="SVG_ICONS.document"></span> DOCS
+        </button>
+        <button
+          class="hud-toggle-pill reset-pill"
+          @click="handleResetCockpitLayout()"
+          title="Reset Draggable Panels to Default Layout"
+        >
+          <span class="eng-icon-inline" v-html="SVG_ICONS.reset"></span> RESET LAYOUT
+        </button>
+      </div>
+
       <!-- MISSION MILESTONE TIMELINE -->
       <div class="starship-milestones-track" v-if="!isCinematicView">
         <button
@@ -519,12 +649,41 @@ onUnmounted(() => {
     <!-- MAIN COCKPIT VIEWPORT -->
     <div class="starship-main-hud" :class="{ 'cinematic-view': isCinematicView }">
       <!-- LEFT HUD: VEHICLE TELEMETRY -->
-      <aside class="starship-telemetry-panel" v-if="!isCinematicView">
-        <div class="hud-box">
-          <div class="hud-box-header">
+      <aside
+        v-if="!isCinematicView && showTelemetryPanel"
+        ref="telemetryPanelRef"
+        class="starship-telemetry-panel"
+        :class="{ minimized: isTelemetryMinimized }"
+      >
+        <div ref="telemetryDragRef" class="panel-drag-header">
+          <div class="panel-drag-title">
+            <span class="drag-handle-grip" title="Drag to reposition">⋮⋮</span>
             <span>FLIGHT DYNAMICS</span>
-            <span class="hud-status-badge">{{ telemetry.phase.name }}</span>
           </div>
+          <div class="panel-window-controls no-drag">
+            <button
+              class="panel-win-btn"
+              @click="isTelemetryMinimized = !isTelemetryMinimized"
+              :title="isTelemetryMinimized ? 'Expand panel' : 'Minimize panel'"
+            >
+              {{ isTelemetryMinimized ? '＋' : '−' }}
+            </button>
+            <button
+              class="panel-win-btn close"
+              @click="showTelemetryPanel = false"
+              title="Hide panel"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div v-show="!isTelemetryMinimized" class="panel-body-scrollable">
+          <div class="hud-box">
+            <div class="hud-box-header">
+              <span>TELEMETRY STREAM</span>
+              <span class="hud-status-badge">{{ telemetry.phase.name }}</span>
+            </div>
 
           <!-- PRIMARY GAUGES -->
           <div class="hud-gauges-grid">
@@ -596,119 +755,190 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
+      </div>
       </aside>
 
       <!-- CENTER BOTTOM: MISSION CONTROL BAR -->
-      <footer class="starship-center-controls">
-        <div class="mission-clock-display">
-          <span class="mission-clock">{{ telemetry.missionTimeString }}</span>
-          <span class="mission-phase-label">{{ telemetry.phase.description }}</span>
-        </div>
-
-        <!-- PLAYBACK SCRUBBER -->
-        <div class="scrubber-row">
-          <button class="ctrl-btn" type="button" @click="togglePlay()">
-            {{ isPlaying ? 'PAUSE' : 'PLAY' }}
-          </button>
-          <button class="ctrl-btn" type="button" @click="resetMission()">RESET</button>
-          <input
-            type="range"
-            min="-30"
-            max="660"
-            step="1"
-            class="starship-scrubber"
-            v-model.number="missionTimeS"
-          />
-          <div class="speed-selector">
+      <footer
+        v-if="showControlsPanel"
+        ref="controlsPanelRef"
+        class="starship-center-controls"
+        :class="{ minimized: isControlsMinimized }"
+      >
+        <div ref="controlsDragRef" class="controls-drag-bar">
+          <span class="controls-drag-handle">⋮⋮ MISSION SCRUBBER & CAMERA DOCK</span>
+          <div class="panel-window-controls no-drag">
             <button
-              v-for="spd in [1, 2, 5, 10]"
-              :key="spd"
-              class="speed-btn"
-              :class="{ active: playbackSpeed === spd }"
-              @click="playbackSpeed = spd"
+              class="panel-win-btn"
+              @click="isControlsMinimized = !isControlsMinimized"
+              :title="isControlsMinimized ? 'Expand scrubber' : 'Minimize scrubber'"
             >
-              {{ spd }}x
+              {{ isControlsMinimized ? '＋' : '−' }}
+            </button>
+            <button
+              class="panel-win-btn close"
+              @click="showControlsPanel = false"
+              title="Hide Scrubber"
+            >
+              ✕
             </button>
           </div>
         </div>
 
-        <!-- MULTI-CAM SELECTOR -->
-        <div class="camera-director-dock">
-          <span class="cam-label">CAM:</span>
-          <button
-            v-for="cam in [
-              { id: 'AUTO_DIRECTOR', name: 'AUTO DIRECTOR' },
-              { id: 'TOWER_CAM', name: 'TOWER CAM' },
-              { id: 'BOOSTER_ROCKETCAM', name: 'ROCKETCAM' },
-              { id: 'SHIP_EARTHCAM', name: 'SHIP EARTHCAM' },
-              { id: 'CHOPSTICK_CAM', name: 'CHOPSTICKS' },
-              { id: 'CHASE_DRONE_CAM', name: 'CHASE DRONE' },
-              { id: 'ORBIT_VIEW', name: 'ORBIT 3D' },
-              { id: 'FREE_ORBIT', name: 'FREE GLOBE' },
-            ]"
-            :key="cam.id"
-            class="cam-btn"
-            :class="{ active: selectedCamMode === cam.id }"
-            @click="setCamera(cam.id)"
-          >
-            {{ cam.name }}
-          </button>
+        <div v-show="!isControlsMinimized" class="controls-body">
+          <div class="mission-clock-display">
+            <span class="mission-clock">{{ telemetry.missionTimeString }}</span>
+            <span class="mission-phase-label">{{ telemetry.phase.description }}</span>
+          </div>
+
+          <!-- PLAYBACK SCRUBBER -->
+          <div class="scrubber-row">
+            <button class="ctrl-btn" type="button" @click="togglePlay()">
+              {{ isPlaying ? 'PAUSE' : 'PLAY' }}
+            </button>
+            <button class="ctrl-btn" type="button" @click="resetMission()">RESET</button>
+            <input
+              type="range"
+              min="-30"
+              max="660"
+              step="1"
+              class="starship-scrubber"
+              v-model.number="missionTimeS"
+            />
+            <div class="speed-selector">
+              <button
+                v-for="spd in [1, 2, 5, 10]"
+                :key="spd"
+                class="speed-btn"
+                :class="{ active: playbackSpeed === spd }"
+                @click="playbackSpeed = spd"
+              >
+                {{ spd }}x
+              </button>
+            </div>
+          </div>
+
+          <!-- MULTI-CAM SELECTOR -->
+          <div class="camera-director-dock">
+            <span class="cam-label">CAM:</span>
+            <button
+              v-for="cam in [
+                { id: 'AUTO_DIRECTOR', name: 'AUTO DIRECTOR' },
+                { id: 'TOWER_CAM', name: 'TOWER CAM' },
+                { id: 'BOOSTER_ROCKETCAM', name: 'ROCKETCAM' },
+                { id: 'SHIP_EARTHCAM', name: 'SHIP EARTHCAM' },
+                { id: 'CHOPSTICK_CAM', name: 'CHOPSTICKS' },
+                { id: 'CHASE_DRONE_CAM', name: 'CHASE DRONE' },
+                { id: 'ORBIT_VIEW', name: 'ORBIT 3D' },
+                { id: 'FREE_ORBIT', name: 'FREE GLOBE' },
+              ]"
+              :key="cam.id"
+              class="cam-btn"
+              :class="{ active: selectedCamMode === cam.id }"
+              @click="setCamera(cam.id)"
+            >
+              {{ cam.name }}
+            </button>
+          </div>
         </div>
       </footer>
 
       <!-- RIGHT HUD: STARLINK & MEDIA RADAR -->
-      <aside class="starship-right-panel" v-if="!isCinematicView">
-        <div class="right-tabs-nav">
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'telemetry' }"
-            @click="activeTab = 'telemetry'"
-          >
-            CONNECTIVITY
-          </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'infra' }"
-            @click="activeTab = 'infra'"
-          >
-            INFRA & ENERGY
-          </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'radar' }"
-            @click="activeTab = 'radar'"
-          >
-            FLIGHT & SEA RADAR
-          </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'cityscapes' }"
-            @click="activeTab = 'cityscapes'"
-          >
-            CITY CAMERAS
-          </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'media' }"
-            @click="activeTab = 'media'"
-          >
-            LIVE MEDIA
-          </button>
-          <button
-            class="tab-btn highlight-biz-tab"
-            :class="{ active: activeTab === 'biz' }"
-            @click="activeTab = 'biz'"
-          >
-            TERRAFAB & BIZ
-          </button>
-          <button
-            class="tab-btn highlight-sovereign-tab"
-            :class="{ active: activeTab === 'sovereign-audit' }"
-            @click="activeTab = 'sovereign-audit'"
-          >
-            SPACE-NATIVE & AUDIT
-          </button>
+      <aside
+        v-if="!isCinematicView && showRightPanel"
+        ref="rightPanelRef"
+        class="starship-right-panel"
+        :class="{ minimized: isRightPanelMinimized }"
+      >
+        <div ref="rightDragRef" class="panel-drag-header">
+          <div class="panel-drag-title">
+            <span class="drag-handle-grip" title="Drag to reposition">⋮⋮</span>
+            <span>INTELLIGENCE & SENSOR MESH</span>
+          </div>
+          <div class="panel-window-controls no-drag">
+            <button
+              class="panel-win-btn"
+              @click="isRightPanelMinimized = !isRightPanelMinimized"
+              :title="isRightPanelMinimized ? 'Expand panel' : 'Minimize panel'"
+            >
+              {{ isRightPanelMinimized ? '＋' : '−' }}
+            </button>
+            <button
+              class="panel-win-btn close"
+              @click="showRightPanel = false"
+              title="Hide panel"
+            >
+              ✕
+            </button>
+          </div>
         </div>
+
+        <div v-show="!isRightPanelMinimized" class="panel-body-scrollable">
+          <div class="right-tabs-nav">
+            <button
+              class="tab-btn"
+              :class="{ active: activeTab === 'telemetry' }"
+              @click="activeTab = 'telemetry'"
+              title="Starlink & Mobile Telemetry"
+            >
+              CONNECTIVITY
+            </button>
+            <button
+              class="tab-btn"
+              :class="{ active: activeTab === 'infra' }"
+              @click="activeTab = 'infra'"
+              title="Critical Infrastructure & Energy Grid"
+            >
+              INFRA / ENERGY
+            </button>
+            <button
+              class="tab-btn"
+              :class="{ active: activeTab === 'radar' }"
+              @click="activeTab = 'radar'"
+              title="Flight & Maritime Tracker"
+            >
+              FLIGHT & SEA
+            </button>
+            <button
+              class="tab-btn"
+              :class="{ active: activeTab === 'cityscapes' }"
+              @click="activeTab = 'cityscapes'"
+              title="Global City Cameras"
+            >
+              CITY CAMS
+            </button>
+            <button
+              class="tab-btn"
+              :class="{ active: activeTab === 'media' }"
+              @click="activeTab = 'media'"
+              title="Live Geospatial Media Feeds"
+            >
+              LIVE MEDIA
+            </button>
+            <button
+              class="tab-btn highlight-biz-tab"
+              :class="{ active: activeTab === 'biz' }"
+              @click="activeTab = 'biz'"
+              title="TerraFab & Business Intelligence"
+            >
+              TERRAFAB
+            </button>
+            <button
+              class="tab-btn highlight-sovereign-tab"
+              :class="{ active: activeTab === 'sovereign-audit' }"
+              @click="activeTab = 'sovereign-audit'"
+              title="Space-Native AI & Forensic Attestation"
+            >
+              SPACE-AI
+            </button>
+            <button
+              class="tab-btn highlight-docs-tab"
+              @click="openDocumentation()"
+              title="Open Complete Architecture & Operator Manual"
+            >
+              DOCS
+            </button>
+          </div>
 
         <!-- TAB 1: STARLINK & MOBILE CARRIER RADAR -->
         <div v-if="activeTab === 'telemetry'" class="tab-content">
@@ -2136,6 +2366,7 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+        </div>
       </aside>
     </div>
   </div>
@@ -2247,6 +2478,151 @@ onUnmounted(() => {
   box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
 }
 
+/* CONSOLE CUSTOMIZATION HUD TOGGLES BAR */
+.hud-toggles-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.hud-toggle-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(2, 6, 23, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.hud-toggle-pill:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #e2e8f0;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.hud-toggle-pill.active {
+  background: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.hud-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+.hud-toggle-pill.active .hud-pill-dot {
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+.hud-toggle-pill.docs-pill {
+  border-color: rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+}
+
+.hud-toggle-pill.docs-pill:hover {
+  background: rgba(168, 85, 247, 0.2);
+  color: #e9d5ff;
+}
+
+.hud-toggle-pill.reset-pill {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+}
+
+.hud-toggle-pill.reset-pill:hover {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+/* DRAGGABLE & MINIMIZABLE PANEL HEADERS */
+.panel-drag-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.6rem;
+  background: rgba(2, 6, 23, 0.85);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px 6px 0 0;
+  cursor: grab;
+  user-select: none;
+}
+
+.panel-drag-header:active {
+  cursor: grabbing;
+}
+
+.panel-drag-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+}
+
+.drag-handle-grip {
+  color: #64748b;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+.panel-window-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.panel-win-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 0.72rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.panel-win-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.panel-win-btn.close:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+.panel-body-scrollable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
 .starship-milestones-track {
   display: flex;
   align-items: center;
@@ -2316,13 +2692,28 @@ onUnmounted(() => {
   position: absolute;
   top: 136px;
   left: 20px;
-  width: 320px;
-  max-height: calc(100vh - 220px);
+  width: 330px;
+  min-width: 280px;
+  max-width: 650px;
+  max-height: calc(100vh - 180px);
   overflow-y: auto;
+  resize: both;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.5rem;
   z-index: 1040;
+  background: rgba(10, 15, 30, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 0.4rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(14px);
+}
+
+.starship-telemetry-panel.minimized {
+  max-height: 40px;
+  overflow: hidden;
+  resize: none;
 }
 
 .hud-box {
@@ -2504,22 +2895,57 @@ onUnmounted(() => {
 .starship-center-controls {
   pointer-events: auto;
   position: absolute;
-  bottom: 90px;
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
-  align-items: center;
   background: rgba(10, 15, 30, 0.94);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: 12px;
-  padding: 0.55rem 1.1rem;
+  padding: 0.4rem 0.8rem;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(56, 189, 248, 0.15);
   backdrop-filter: blur(16px);
   gap: 0.45rem;
   min-width: 520px;
   max-width: min(860px, calc(100vw - 40px));
   z-index: 1050;
+}
+
+.starship-center-controls.minimized {
+  max-height: 40px;
+  overflow: hidden;
+  padding: 0.35rem 0.8rem;
+}
+
+.controls-drag-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  cursor: grab;
+  user-select: none;
+}
+
+.controls-drag-bar:active {
+  cursor: grabbing;
+}
+
+.controls-drag-handle {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+}
+
+.controls-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
 }
 
 .mission-clock-display {
@@ -2636,48 +3062,102 @@ onUnmounted(() => {
   position: absolute;
   top: 136px;
   right: 20px;
-  width: 340px;
-  max-height: calc(100vh - 220px);
+  width: 420px;
+  min-width: 320px;
+  max-width: 800px;
+  max-height: calc(100vh - 180px);
   overflow-y: auto;
+  resize: both;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
   z-index: 1040;
+  background: rgba(10, 15, 30, 0.94);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 0.4rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(14px);
+}
+
+.starship-right-panel.minimized {
+  max-height: 40px;
+  overflow: hidden;
+  resize: none;
 }
 
 .right-tabs-nav {
-  display: flex;
-  background: rgba(10, 15, 30, 0.85);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: rgba(2, 6, 23, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: 6px;
-  padding: 0.25rem;
-  backdrop-filter: blur(8px);
+  padding: 4px;
 }
 
 .tab-btn {
-  flex: 1;
-  background: transparent;
-  border: 0;
-  color: #94a3b8;
-  font-family: inherit;
-  font-size: 0.68rem;
-  padding: 0.35rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 28px;
+  padding: 0.3rem 0.2rem;
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
   border-radius: 4px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.tab-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #e2e8f0;
+  border-color: rgba(56, 189, 248, 0.25);
 }
 
 .tab-btn.active {
-  background: rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.22);
   color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.45);
   font-weight: 700;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.tab-btn.highlight-sovereign-tab {
+  border-color: rgba(0, 246, 255, 0.3);
+  color: #38bdf8;
+}
+
+.tab-btn.highlight-sovereign-tab.active {
+  background: rgba(0, 246, 255, 0.25);
+  color: #00ffff;
+  border-color: #00f6ff;
+  box-shadow: 0 0 12px rgba(0, 246, 255, 0.4);
+}
+
+.tab-btn.highlight-docs-tab {
+  border-color: rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+}
+
+.tab-btn.highlight-docs-tab:hover {
+  background: rgba(168, 85, 247, 0.2);
+  color: #e9d5ff;
 }
 
 .tab-content {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 240px);
   overflow-y: auto;
 }
 

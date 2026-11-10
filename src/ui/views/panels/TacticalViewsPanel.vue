@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useDisplayStore } from '../../stores/display.js';
 import { t } from '../../../i18n/index.js';
 import { makeDraggable, resetDashboardLayout } from '../../dashboard/dashboardLayout.js';
+import { toggle3DUncertaintyEllipsoids } from '../../../layers/evidence/sovereignSpaceNativeEngine.js';
 
 const display = useDisplayStore();
 const isOpen = ref(false);
@@ -139,6 +140,48 @@ const TACTICAL_VIEWS = [
     style: 'normal',
     desc: 'High-altitude satellite reconnaissance track tracing atmospheric limb and day/night boundary.',
     iconKey: 'orbit'
+  },
+  {
+    id: 'leo-space-native-fl',
+    title: 'Space-Native LEO Constellation & ISL Mesh',
+    location: 'Low Earth Orbit (550 km)',
+    tag: 'ORBITAL FL MESH',
+    lat: 28.0000,
+    lon: -40.0000,
+    alt: 2500000,
+    heading: 45,
+    pitch: -75,
+    style: 'normal',
+    desc: 'LEO satellite decentralized federated learning nodes synchronizing quantized gradient tensors over 100 Gbps optical ISLs.',
+    iconKey: 'orbit'
+  },
+  {
+    id: 'baltic-dark-intercept',
+    title: 'Baltic Sea Dark Vessel & AIS Spoofing Interdiction',
+    location: 'Baltic Sea / Bornholm Basin',
+    tag: 'CONTESTED MARITIME',
+    lat: 55.1200,
+    lon: 14.8800,
+    alt: 2800,
+    heading: 232,
+    pitch: -48,
+    style: 'surveillance',
+    desc: 'Kinematic 3D uncertainty expansion monitoring spoofed crude carriers and dark AIS transponders with Ed25519 DSSE sealing.',
+    iconKey: 'maritime'
+  },
+  {
+    id: 'red-sea-corridor',
+    title: 'Bab-el-Mandeb Kinetic Defense Corridor',
+    location: 'Southern Red Sea',
+    tag: 'KINETIC CHOKEPOINT',
+    lat: 12.5833,
+    lon: 43.3333,
+    alt: 18500,
+    heading: 325,
+    pitch: -60,
+    style: 'thermal',
+    desc: 'High-risk maritime corridor with real-time multi-sensor optical and AIS crosslink validation.',
+    iconKey: 'chokepoint'
   }
 ];
 
@@ -216,6 +259,24 @@ function toggleLocalNeuralAgent() {
 function toggleStarship() {
   window.dispatchEvent(new CustomEvent('gev:toggle-starship-cockpit'));
   showToast('SpaceX Starship & Starlink Emulation HUD toggled');
+}
+
+function openSpaceNativeAudit() {
+  window.dispatchEvent(new CustomEvent('gev:toggle-starship-cockpit', { detail: { open: true } }));
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('gev:open-space-native-audit'));
+  }, 100);
+  showToast('Space-Native AI & Forensic Attestation opened');
+}
+
+function toggle3DUncertainty() {
+  const active = toggle3DUncertaintyEllipsoids(window.viewer);
+  showToast(active ? '3D Spatial Uncertainty Ellipsoids: ACTIVE' : '3D Spatial Uncertainty Ellipsoids: HIDDEN');
+}
+
+function openDocsManual() {
+  window.dispatchEvent(new CustomEvent('gev:toggle-documentation'));
+  showToast('Sovereign Operator Manual opened');
 }
 
 function toggleOpsMenu() {
@@ -347,7 +408,56 @@ onUnmounted(() => {
         <span class="trigger-text">REPLAY</span>
       </button>
 
-      <!-- 4. Operations Dropdown Menu (Prevents horizontal overflow & button collision) -->
+      <!-- 4. Space-Native AI & Audit Quick Access -->
+      <button
+        class="tactical-trigger-btn space-native-btn"
+        @click="openSpaceNativeAudit"
+        title="Launch Space-Native AI & LEO Constellation Forensic Audit"
+      >
+        <span class="pulse-indicator cyan"></span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="8" r="6"/>
+            <path d="M3 8a5 3 0 0 1 10 0" stroke-dasharray="2 2"/>
+            <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="trigger-text">SPACE-NATIVE</span>
+      </button>
+
+      <!-- 5. 3D Spatial Uncertainty Ellipsoids -->
+      <button
+        class="tactical-trigger-btn uncertainty-btn"
+        @click="toggle3DUncertainty"
+        title="Toggle 3D Dynamic Spatial Uncertainty Ellipsoids (Kinematic sigma_x * sigma_y * sigma_z)"
+      >
+        <span class="pulse-indicator purple"></span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <ellipse cx="8" cy="8" rx="7" ry="4"/>
+            <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="trigger-text">3D UNCERTAINTY</span>
+      </button>
+
+      <!-- 6. Sovereign Documentation Manual -->
+      <button
+        class="tactical-trigger-btn docs-btn"
+        @click="openDocsManual"
+        title="Open Interactive Sovereign Architecture & Operator Manual"
+      >
+        <span class="pulse-indicator green"></span>
+        <span class="trigger-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M3 2h8a2 2 0 0 1 2 2v10H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/>
+            <path d="M5 5h5M5 8h5M5 11h3"/>
+          </svg>
+        </span>
+        <span class="trigger-text">DOCS</span>
+      </button>
+
+      <!-- 7. Operations Dropdown Menu (Prevents horizontal overflow & button collision) -->
       <div class="ops-menu-wrapper">
         <button
           class="tactical-trigger-btn ops-menu-btn"
@@ -369,6 +479,38 @@ onUnmounted(() => {
         <!-- Dropdown Menu Content -->
         <transition name="dropdown-fade">
           <div v-if="isOpsMenuOpen" class="ops-dropdown-menu">
+            <button
+              class="dropdown-item-btn"
+              @click="openSpaceNativeAudit(); isOpsMenuOpen = false;"
+              title="Launch Space-Native AI & LEO Constellation FL Mesh"
+            >
+              <span class="pulse-indicator cyan"></span>
+              <span>Space-Native FL Mesh</span>
+            </button>
+            <button
+              class="dropdown-item-btn"
+              @click="toggle3DUncertainty(); isOpsMenuOpen = false;"
+              title="Toggle 3D Kinematic Spatial Uncertainty Ellipsoids"
+            >
+              <span class="pulse-indicator purple"></span>
+              <span>3D Uncertainty Ellipsoids</span>
+            </button>
+            <button
+              class="dropdown-item-btn"
+              @click="openSpaceNativeAudit(); isOpsMenuOpen = false;"
+              title="Generate Court-Admissible Ed25519 DSSE Attestation"
+            >
+              <span class="pulse-indicator green"></span>
+              <span>Court Attestation (DSSE)</span>
+            </button>
+            <button
+              class="dropdown-item-btn"
+              @click="openDocsManual(); isOpsMenuOpen = false;"
+              title="Open Interactive Architecture & Operator Manual"
+            >
+              <span class="pulse-indicator amber"></span>
+              <span>Operator Manual & Docs</span>
+            </button>
             <button
               class="dropdown-item-btn"
               @click="toggleStealthIntel(); isOpsMenuOpen = false;"
