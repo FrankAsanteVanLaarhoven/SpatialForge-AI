@@ -198,6 +198,7 @@ function getSovereignRadioCatalog(timestamp, catalogInstance) {
     acceptedGeneration: 1,
     rejectedStationCount: 0,
     stale: false,
+    sovereign: true,
   };
 }
 
@@ -582,6 +583,7 @@ export function createRadioProxyMiddleware({
     } catch (error) {
       if (
         catalogCache &&
+        !catalogCache.sovereign &&
         now() - catalogCache.cachedAt <= RADIO_DIRECTORY_STALE_MS
       ) {
         return {

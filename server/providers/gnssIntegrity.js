@@ -260,10 +260,10 @@ export function gnssIntegrityProxy({
           radiusNm: RADIUS_NM,
           classifier: GNSS_CLASSIFIER.id,
           rows: sovereignRows,
-          ageMs: 500,
-          stale: true,
+          ageMs: 100,
+          stale: false,
         },
-        true,
+        false,
       );
     }
   }

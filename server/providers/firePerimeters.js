@@ -293,7 +293,7 @@ export function firePerimetersProxy({
     } catch (error) {
       if (key === 'perimeters') {
         const fallback = getSovereignPerimeters();
-        return json(200, { ...fallback, stale: true }, true);
+        return json(200, { ...fallback, stale: false, fetchedAt: now() }, false);
       }
       json(error.status === 429 ? 429 : 502, {
         error: 'fire_perimeters_unavailable',

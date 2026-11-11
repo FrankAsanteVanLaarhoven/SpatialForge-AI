@@ -422,7 +422,8 @@ function getSovereignProducts() {
    * download. Only catalog paths are ever fetched.
    */
   async function file(id) {
-    const product = state.products.find((p) => p.id === id);
+    const products = state.products.length ? state.products : getSovereignProducts();
+    const product = products.find((p) => p.id === id);
     if (!product) return null;
     const target = path.join(cacheDir, 'files', `${product.version}.kmz`);
     try {
@@ -430,24 +431,32 @@ function getSovereignProducts() {
     } catch {
       /* not cached yet */
     }
+    if (!product.path || !state.commit) {
+      const bytes = createSovereignKmz(product.title);
+      return { product, bytes };
+    }
     const commit = state.commit;
     let pending = downloads.get(product.version);
     if (!pending) {
       pending = (async () => {
-        const response = await get(
-          ghostMapsRawUrl(commit, product.path),
-          { 'User-Agent': USER_AGENT },
-          FILE_TIMEOUT_MS,
-        );
-        const bytes = Buffer.from(
-          await readResponseBytesCapped(response, GHOSTMAPS_MAX_FILE_BYTES),
-        );
-        await fsp.mkdir(path.dirname(target), { recursive: true });
-        const temp = `${target}.${process.pid}.tmp`;
-        await fsp.writeFile(temp, bytes);
-        await fsp.rename(temp, target);
-        await pruneFiles();
-        return bytes;
+        try {
+          const response = await get(
+            ghostMapsRawUrl(commit, product.path),
+            { 'User-Agent': USER_AGENT },
+            FILE_TIMEOUT_MS,
+          );
+          const bytes = Buffer.from(
+            await readResponseBytesCapped(response, GHOSTMAPS_MAX_FILE_BYTES),
+          );
+          await fsp.mkdir(path.dirname(target), { recursive: true });
+          const temp = `${target}.${process.pid}.tmp`;
+          await fsp.writeFile(temp, bytes);
+          await fsp.rename(temp, target);
+          await pruneFiles();
+          return bytes;
+        } catch {
+          return createSovereignKmz(product.title);
+        }
       })().finally(() => downloads.delete(product.version));
       downloads.set(product.version, pending);
     }
@@ -456,7 +465,8 @@ function getSovereignProducts() {
 
   /** Keep only files that a current product still points to. */
   async function pruneFiles() {
-    const keep = new Set(state.products.map((p) => `${p.version}.kmz`));
+    const products = state.products.length ? state.products : getSovereignProducts();
+    const keep = new Set(products.map((p) => `${p.version}.kmz`));
     const dir = path.join(cacheDir, 'files');
     for (const name of await fsp.readdir(dir).catch(() => [])) {
       if (!keep.has(name) && !name.endsWith('.tmp'))
